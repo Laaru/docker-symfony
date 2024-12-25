@@ -1,0 +1,135 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Service/'                 # services configured manually
+            - '../src/Command/'                 # commands configured manually
+            - '../src/EventListener/'           # EventListeners configured manually
+            - '../src/EventSubscriber/'         # EventSubscribers configured manually
+            - '../src/Consumer/'                # Consumers configured manually
+
+    ###################################################################
+    # MANUAL CONFIGURATIONS
+
+    # Services
+    App\Service\Product\ProductImportService:
+        arguments:
+            $entityManager: '@doctrine.orm.default_entity_manager'
+            $validator: '@validator'
+            $productRepository: '@App\Repository\ProductRepository'
+            $colorRepository: '@App\Repository\ColorRepository'
+            $storeRepository: '@App\Repository\StoreRepository'
+            $logger: '@monolog.logger.product:import'
+
+    App\Service\User\UserRegisterService:
+        arguments:
+            $userRepository: '@App\Repository\UserRepository'
+            $entityManager:  '@doctrine.orm.default_entity_manager'
+            $passwordHasher: '@security.password_hasher'
+            $eventDispatcher: '@Psr\EventDispatcher\EventDispatcherInterface'
+
+    App\Service\Notification\Email\StubEmailNotificationProvider:
+        arguments:
+            $logger: '@monolog.logger.stub:notification_email'
+
+    App\Service\Notification\Sms\StubSmsNotificationProvider:
+        arguments:
+            $logger: '@monolog.logger.stub:notification_sms'
+
+    App\Service\Order\OrderCreateService:
+        arguments:
+            $entityManager:  '@doctrine.orm.default_entity_manager'
+            $basketRepository:  '@App\Repository\BasketRepository'
+            $orderStatusRepository:  '@App\Repository\OrderStatusRepository'
+            $orderRestrictionService:  '@App\Service\Order\OrderRestrictionService'
+            $eventDispatcher: '@Psr\EventDispatcher\EventDispatcherInterface'
+            $deliveryService:  '@App\Service\Delivery\DeliveryService'
+
+    App\Service\Order\OrderInitService:
+        arguments:
+            $basketRepository:  '@App\Repository\BasketRepository'
+            $orderRestrictionService:  '@App\Service\Order\OrderRestrictionService'
+            $deliveryService:  '@App\Service\Delivery\DeliveryService'
+            $paymentService:  '@App\Service\Payment\PaymentService'
+
+    App\Service\Order\OrderRestrictionService:
+
+    App\Service\Order\OrderReportService:
+        arguments:
+            $bus: '@messenger.bus.default'
+            $kafkaProducerService: '@App\Service\Producer\KafkaProducerService'
+            $parameterBag: '@parameter_bag'
+            $orderRepository:  '@App\Repository\OrderRepository'
+
+
+    App\Service\Delivery\DeliveryService:
+
+    App\Service\Payment\PaymentService:
+
+    App\Service\Producer\KafkaProducerService:
+        arguments:
+            $kafkaBroker: '%env(KAFKA_BROKER)%'
+            $topicName: '%env(KAFKA_TOPIC)%'
+    
+    # Commands
+    App\Command\GenerateMockExchangeProductsCommand:
+        tags: [ 'console.command' ]
+        arguments:
+            $logger: '@monolog.logger.command:product_seeder'
+            $productProducer: '@old_sound_rabbit_mq.product_export_producer'
+
+    # EventListeners
+    App\EventListener\ExceptionListener:
+        tags:
+            - { name: 'kernel.event_listener', event: 'kernel.exception' }
+
+    App\EventListener\CacheInvalidationListener:
+        tags:
+            - { name: doctrine.event_listener, event: postUpdate }
+            - { name: doctrine.event_listener, event: postRemove }
+            - { name: doctrine.event_listener, event: postPersist }
+
+    # EventSubscribers
+    App\EventSubscriber\NotificationSubscriber:
+        tags:
+            - { name: 'kernel.event_subscriber' }
+        arguments:
+            $emailNotificationProvider: '@App\Service\Notification\Email\EmailNotificationProviderInterface'
+            $smsNotificationProvider: '@App\Service\Notification\Sms\SmsNotificationProviderInterface'
+
+    # Notification services
+    App\Service\Notification\Email\EmailNotificationProviderInterface:
+        alias: App\Service\Notification\Email\StubEmailNotificationProvider
+
+    App\Service\Notification\Sms\SmsNotificationProviderInterface:
+        alias: App\Service\Notification\Sms\StubSmsNotificationProvider
+
+    # Consumers
+    App\Consumer\ProductImportConsumer:
+        arguments:
+            $logger: '@monolog.logger.consumer:product'
+            $productImportService: '@App\Service\Product\ProductImportService'
+        tags:
+            - { name: 'old_sound_rabbit_mq.product_import', connection: 'default', queue: 'products_queue' }
+
+    # Security
+    App\Security\ExternalApiAuthenticator:
+        arguments:
+            $apiKey: '%env(EXTERNAL_API_KEY)%'

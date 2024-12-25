@@ -1,0 +1,166 @@
+services:
+  php:
+    image: ${IMAGES_PREFIX:-}app-php
+    restart: unless-stopped
+    environment:
+      SERVER_NAME: ${SERVER_NAME:-localhost}, php:80
+      DATABASE_URL: postgresql://${POSTGRES_USER:-user_db}:${POSTGRES_PASSWORD:-password_db}@database:5432/${POSTGRES_DB:-db_app}?serverVersion=${POSTGRES_VERSION:-16}&charset=${POSTGRES_CHARSET:-utf8}
+      MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
+      MERCURE_URL: ${CADDY_MERCURE_URL:-http://php/.well-known/mercure}
+      MERCURE_PUBLIC_URL: ${CADDY_MERCURE_PUBLIC_URL:-https://${SERVER_NAME:-localhost}/.well-known/mercure}
+      MERCURE_JWT_SECRET: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
+      MERCURE_EXTRA_DIRECTIVES: demo
+      XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+    build:
+      context: .
+      target: frankenphp_dev
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./:/app
+      - ./frankenphp/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    tty: true
+    ports:
+      # HTTP
+      - target: 80
+        published: ${HTTP_PORT:-5001}
+        protocol: tcp
+      # HTTPS
+      - target: 443
+        published: ${HTTPS_PORT:-5000}
+        protocol: tcp
+      # HTTP/3
+      - target: 443
+        published: ${HTTP3_PORT:-5000}
+        protocol: udp
+
+  database:
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-db_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password_db}
+      POSTGRES_USER: ${POSTGRES_USER:-user_db}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-db_app}", "-U", "${POSTGRES_USER:-user_db}"]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - database_data:/var/lib/postgresql/data:rw
+    ports:
+      - "5432:5432"
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    environment:
+      - RABBITMQ_DEFAULT_USER=user_rabbit
+      - RABBITMQ_DEFAULT_PASS=password_rabbit
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  rabbitmq-php-consumer:
+    restart: on-failure
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-user_db}:${POSTGRES_PASSWORD:-password_db}@database:5432/${POSTGRES_DB:-db_app}?serverVersion=${POSTGRES_VERSION:-16}&charset=${POSTGRES_CHARSET:-utf8}
+    build:
+      context: .
+      target: frankenphp_dev
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./:/app
+    command: ["sh", "-c", "sleep 5 && php bin/console rabbitmq:consumer product_import -vvv"]
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - default
+
+  redis-commander:
+    image: rediscommander/redis-commander
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      - redis
+
+  redis-php-consumer:
+    restart: on-failure
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-user_db}:${POSTGRES_PASSWORD:-password_db}@database:5432/${POSTGRES_DB:-db_app}?serverVersion=${POSTGRES_VERSION:-16}&charset=${POSTGRES_CHARSET:-utf8}
+    build:
+      context: .
+      target: frankenphp_dev
+    depends_on:
+      - redis
+    volumes:
+      - ./:/app
+    command: [ "sh", "-c", "sleep 5 && php bin/console messenger:consume redis -vvv" ]
+
+  kafka-zookeeper:
+    image: wurstmeister/zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    networks:
+      - default
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_ZOOKEEPER_CONNECT: kafka-zookeeper:2181
+      KAFKA_CREATE_TOPICS: "order-report:1:1"
+    ports:
+      - "9092:9092"
+    expose:
+      - "9093"
+    depends_on:
+      - kafka-zookeeper
+    networks:
+      - default
+
+  kafka-akhq-admin:
+    image: tchiotludo/akhq
+    container_name: akhq
+    ports:
+      - "8080:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            kafka-cluster:
+              properties:
+                bootstrap.servers: "kafka:9093"
+          security:
+            default-group: no-roles
+            basic-auth:
+              - username: admin
+                password: 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
+                groups:
+                  - admin
+        micronaut:
+          security:
+            enabled: true
+    depends_on:
+      - kafka
+    networks:
+      - default
+
+volumes:
+  caddy_data:
+  caddy_config:
+  database_data:

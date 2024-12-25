@@ -1,0 +1,27 @@
+stages:
+  - test
+  - lint
+
+php-unit:
+  stage: test
+  image: docker:latest
+  services:
+    - name: docker:19.03.12
+      entrypoint: ["/bin/sh", "-c", "while true; do sleep 30; done;"]
+  script:
+    - docker-compose -f docker-compose.yml up -d
+    - docker-compose exec php php vendor/bin/phpunit --testdox --colors=always
+  after_script:
+    - docker-compose down
+
+php-cs:
+  stage: lint
+  image: docker:latest
+  services:
+    - name: docker:19.03.12
+      entrypoint: ["/bin/sh", "-c", "while true; do sleep 30; done;"]
+  script:
+    - docker-compose -f docker-compose.yml up -d
+    - docker-compose exec php php vendor/bin/php-cs-fixer fix --dry-run --diff
+  after_script:
+    - docker-compose down

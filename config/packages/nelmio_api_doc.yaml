@@ -1,0 +1,57 @@
+nelmio_api_doc:
+    areas: # to filter documented areas
+        path_patterns:
+            - ^/api(?!/doc$) # Accepts routes under /api except /api/doc
+            - ^/external_api
+    documentation:
+        info:
+            title: Api title
+            description: Api description
+            version: 1.0.0
+        security:
+            - Bearer: [ ]
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+                AuthToken:
+                    type: apiKey
+                    in: header
+                    name: auth-token
+        paths: # manual description for bundle routes
+            /api/auth/refresh:
+                post:
+                    tags:
+                        - auth
+                    description: Endpoint to refresh JWT token using a valid refresh token.
+                    requestBody:
+                        description: Refresh token required to obtain a new JWT token.
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        refreshToken:
+                                            type: string
+                                            description: The refresh token.
+                    responses:
+                        '200':
+                            description: Successfully refreshed JWT token.
+                            content:
+                                application/json:
+                                    schema:
+                                        type: object
+                                        properties:
+                                            token:
+                                                type: string
+                                                description: New JWT token.
+                                            refreshToken:
+                                                type: string
+                                                description: New refresh token.
+                                            refreshTokenExpiration:
+                                                type: integer
+                                                description: Expiration time of the new refresh token.
+                        '401':
+                            description: JWT Refresh Token Not Found.

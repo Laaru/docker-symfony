@@ -1,0 +1,9 @@
+framework:
+    messenger:
+        transports:
+            redis:
+                dsn: '%env(MESSENGER_TRANSPORT_REDIS_DSN)%'
+                serializer: messenger.transport.symfony_serializer
+
+        routing:
+            'App\Message\GenerateOrderReportMessage': redis
