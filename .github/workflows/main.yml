@@ -23,15 +23,15 @@ jobs:
 
       - name: Run make init (build and start containers, run migrations and fixtures)
         run: |
-          make init
+          make autotest-init
 
       - name: Run PHP Unit tests using Makefile
         run: |
-          make php-unit
+          make autotest-php-unit
 
       - name: Run PHP-CS Fixer using Makefile
         run: |
-          make php-cs
+          make autotest-php-cs
 
       - name: Shutdown containers
         run: |

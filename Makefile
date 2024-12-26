@@ -8,13 +8,24 @@ up: ## Start the docker hub in detached mode (no logs)
 down: ## Stop the docker hub
 	docker compose down --remove-orphans
 
-init: build up wait composer-install symfony-migrate-silent symfony-seed-silent symfony-generate-api-keys-silent
+init: build up wait symfony-migrate-silent symfony-seed-silent symfony-generate-api-keys-silent
 reload: down up
 rebuild: down build up
 
 wait:
 	@echo "Waiting for a few seconds to ensure DB is ready..."
 	@sleep 10
+
+## —— Github actions ————————————————————————————————————————————————————————————————
+autotest-init: build up wait composer-install symfony-migrate-silent symfony-seed-silent symfony-generate-api-keys-silent
+
+autotest-php-unit:
+	@echo "Running PHPUnit tests..."
+	docker compose exec -T php vendor/bin/phpunit --testdox --colors=always
+
+php-cs:
+	@echo "Running PHP CS..."
+	docker-compose exec -T php php vendor/bin/php-cs-fixer fix --dry-run --diff
 
 ## —— Php container ————————————————————————————————————————————————————————————————
 sh: ## Connect to the FrankenPHP container
