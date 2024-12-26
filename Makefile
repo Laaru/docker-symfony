@@ -23,7 +23,7 @@ autotest-php-unit:
 	@echo "Running PHPUnit tests..."
 	docker compose exec -T php vendor/bin/phpunit --testdox --colors=always
 
-php-cs:
+autotest-php-cs:
 	@echo "Running PHP CS..."
 	docker-compose exec -T php php vendor/bin/php-cs-fixer fix --dry-run --diff
 
