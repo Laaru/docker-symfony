@@ -8,7 +8,7 @@ up: ## Start the docker hub in detached mode (no logs)
 down: ## Stop the docker hub
 	docker compose down --remove-orphans
 
-init: build up wait symfony-migrate-silent symfony-seed-silent symfony-generate-api-keys-silent
+init: build up wait composer-install symfony-migrate-silent symfony-seed-silent symfony-generate-api-keys-silent
 reload: down up
 rebuild: down build up
 
@@ -52,6 +52,9 @@ php-cs-fix:
 ## —— Utilities
 symfony-list:
 	docker compose exec php php bin/console list
+
+composer-install:
+	docker compose exec php composer install --prefer-dist --no-progress --no-interaction
 
 symfony-migrate-silent:
 	docker compose exec php php bin/console doctrine:migrations:migrate --no-interaction;
