@@ -5,15 +5,14 @@ namespace App\Controller\Api;
 use App\Entity\Basket;
 use App\Entity\DTO\BasketItemRemoveDTO;
 use App\Entity\DTO\BasketItemUpdateDTO;
-use App\Repository\BasketRepository;
-use App\Repository\ProductRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\User;
+use App\Service\Basket\BasketItemService;
+use App\Service\Basket\BasketService;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -26,9 +25,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class BasketController extends AbstractController
 {
     public function __construct(
-        private readonly BasketRepository $basketRepository,
-        private readonly ProductRepository $productRepository,
-        private readonly EntityManagerInterface $entityManager
+        private readonly BasketService $basketService,
+        private readonly BasketItemService $basketItemService
     ) {}
 
     #[Route('/', name: 'view', methods: ['GET'])]
@@ -42,16 +40,14 @@ class BasketController extends AbstractController
     )]
     public function view(): JsonResponse
     {
+        /** @var User $user */
         $user = $this->getUser();
-        $basket = $this->basketRepository->findOneBy(['userRelation' => $user]);
-        if (!$basket) {
-            $basket = new Basket();
-            $basket->setUserRelation($user);
-            $this->entityManager->persist($basket);
-            $this->entityManager->flush();
-        }
+        $basket = $this->basketService->getUserBasket($user);
 
-        return $this->json($this->basketRepository->normalize($basket, 'basket'));
+        return $this->json(
+            data: $basket,
+            context: ['groups' => ['basket']]
+        );
     }
 
     #[Route('/add', name: 'add', methods: ['POST'])]
@@ -68,25 +64,15 @@ class BasketController extends AbstractController
         #[MapRequestPayload]
         BasketItemUpdateDTO $basketItemUpdateDTO
     ): JsonResponse {
+        /** @var User $user */
         $user = $this->getUser();
-        $basket = $this->basketRepository->findOneBy(['userRelation' => $user]);
+        $basket = $this->basketService->getUserBasket($user);
+        $this->basketItemService->addItem($basket, $basketItemUpdateDTO);
 
-        if (!$basket) {
-            $basket = new Basket();
-            $basket->setUserRelation($user);
-            $this->entityManager->persist($basket);
-        }
-
-        $product = $this->productRepository->find($basketItemUpdateDTO->productId);
-        if (!$product) {
-            return $this->json(['message' => 'Product not found'], 404);
-        }
-
-        $basket->createAndAddItem($product, $basketItemUpdateDTO->quantity);
-        $this->entityManager->persist($basket);
-        $this->entityManager->flush();
-
-        return $this->json($this->basketRepository->normalize($basket, 'basket'));
+        return $this->json(
+            data: $basket,
+            context: ['groups' => ['basket']]
+        );
     }
 
     #[Route('/update', name: 'update', methods: ['PUT'])]
@@ -103,25 +89,15 @@ class BasketController extends AbstractController
         #[MapRequestPayload]
         BasketItemUpdateDTO $basketItemUpdateDTO
     ): JsonResponse {
+        /** @var User $user */
         $user = $this->getUser();
-        $basket = $this->basketRepository->findOneBy(['userRelation' => $user]);
+        $basket = $this->basketService->getUserBasket($user);
+        $this->basketItemService->updateItem($basket, $basketItemUpdateDTO);
 
-        if (!$basket) {
-            $basket = new Basket();
-            $basket->setUserRelation($user);
-            $this->entityManager->persist($basket);
-        }
-
-        $product = $this->productRepository->find($basketItemUpdateDTO->productId);
-        if (!$product) {
-            return $this->json(['message' => 'Product not found'], 404);
-        }
-
-        $basket->updateItem($product->getId(), $basketItemUpdateDTO->quantity);
-        $this->entityManager->persist($basket);
-        $this->entityManager->flush();
-
-        return $this->json($this->basketRepository->normalize($basket, 'basket'));
+        return $this->json(
+            data: $basket,
+            context: ['groups' => ['basket']]
+        );
     }
 
     #[Route('/remove', name: 'remove', methods: ['DELETE'])]
@@ -138,22 +114,14 @@ class BasketController extends AbstractController
         #[MapRequestPayload]
         BasketItemRemoveDTO $basketItemRemoveDTO
     ): JsonResponse {
+        /** @var User $user */
         $user = $this->getUser();
-        $basket = $this->basketRepository->findOneBy(['userRelation' => $user]);
+        $basket = $this->basketService->getUserBasket($user);
+        $this->basketItemService->removeItem($basket, $basketItemRemoveDTO);
 
-        if (!$basket || $basket->isEmpty()) {
-            throw new HttpException(400, 'Basket is empty');
-        }
-
-        $product = $this->productRepository->find($basketItemRemoveDTO->productId);
-        if (!$product) {
-            throw new HttpException(400, 'Product not found');
-        }
-
-        $basket->removeItemByProductId($product->getId());
-        $this->entityManager->persist($basket);
-        $this->entityManager->flush();
-
-        return $this->json($this->basketRepository->normalize($basket, 'basket'));
+        return $this->json(
+            data: $basket,
+            context: ['groups' => ['basket']]
+        );
     }
 }

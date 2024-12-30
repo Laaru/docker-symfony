@@ -6,11 +6,14 @@ use App\Entity\OrderStatus;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
+/**
+ * @extends AbstractRepository<OrderStatus>
+ */
 class OrderStatusRepository extends AbstractRepository
 {
     public function __construct(
         ManagerRegistry $registry,
-        private readonly NormalizerInterface $normalizer
+        NormalizerInterface $normalizer
     ) {
         parent::__construct(
             $registry,
@@ -19,8 +22,18 @@ class OrderStatusRepository extends AbstractRepository
         );
     }
 
-    public function getInitialStatus(): ?OrderStatus
+    public function getInitialStatus(): OrderStatus
     {
-        return $this->findOneBySlug('prinyat') ?: $this->findOneByExternalId(1);
+        /** @var null|OrderStatus $statusBySlug */
+        $statusBySlug = $this->findOneBySlug('prinyat');
+        /** @var null|OrderStatus $firstStatus */
+        $firstStatus = $this->findOneByExternalId(1);
+
+        $initialStatus = $statusBySlug ?: $firstStatus;
+        if (!$initialStatus) {
+            throw new \RuntimeException('Initial order status not set. Create at least one order status.');
+        }
+
+        return $initialStatus;
     }
 }

@@ -10,14 +10,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class UserRegisterService
 {
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly EntityManagerInterface $entityManager,
-        private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly EventDispatcherInterface $eventDispatcher
     ) {}
 
@@ -36,8 +34,8 @@ class UserRegisterService
         $user->setLastName($userRegisterDTO->lastName);
         $user->setEmail($userRegisterDTO->email);
         $user->setPhone($userRegisterDTO->phone);
-        $user->setRoles(['ROLE_USER']);
-        $user->setPassword($this->passwordHasher->hashPassword($user, $userRegisterDTO->password));
+        $user->addRole('ROLE_USER');
+        $user->setPassword($userRegisterDTO->password);
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();

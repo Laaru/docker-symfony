@@ -2,6 +2,7 @@
 
 namespace App\Service\Order;
 
+use App\Entity\Basket;
 use App\Entity\DTO\OrderCreateDTO;
 use App\Entity\Order;
 use App\Entity\User;
@@ -23,8 +24,9 @@ class OrderCreateService
         private readonly DeliveryService $deliveryService,
     ) {}
 
-    public function register(OrderCreateDTO $orderCreateDTO, User $user): Order
+    public function create(OrderCreateDTO $orderCreateDTO, User $user): Order
     {
+        /** @var Basket $basket */
         $basket = $this->basketRepository->findOneBy(['userRelation' => $user]);
         $this->orderRestrictionService->checkRestriction($basket);
 
@@ -37,10 +39,14 @@ class OrderCreateService
         $order->setDeliveryAddress($orderCreateDTO->deliveryAddress);
         $order->setDeliveryAddressKladrId($orderCreateDTO->deliveryAddressKladrId);
         foreach ($basket->getItems() as $basketItem) {
+            $product = $basketItem->getProduct();
+            if (!$product) {
+                continue;
+            }
             $order->createAndAddItem(
-                $basketItem->getProduct(),
+                $product,
                 $basketItem->getQuantity(),
-                $basketItem->getProduct()->getSalePrice() ?: $basketItem->getProduct()->getBasePrice()
+                $product->getSalePrice() ?: $product->getBasePrice()
             );
         }
         $this->entityManager->persist($order);

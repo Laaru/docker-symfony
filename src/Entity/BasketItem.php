@@ -8,7 +8,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity]
 class BasketItem
 {
-    #[Groups(['basket'])]
+    #[Groups(['basket', 'order'])]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -18,12 +18,12 @@ class BasketItem
     #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     private ?Basket $basket = null;
 
-    #[Groups(['basket'])]
+    #[Groups(['basket', 'order'])]
     #[ORM\ManyToOne(targetEntity: Product::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private ?Product $product = null;
+    private Product $product;
 
-    #[Groups(['basket'])]
+    #[Groups(['basket', 'order'])]
     #[ORM\Column]
     private int $quantity = 1;
 
@@ -44,12 +44,12 @@ class BasketItem
         return $this;
     }
 
-    public function getProduct(): ?Product
+    public function getProduct(): Product
     {
         return $this->product;
     }
 
-    public function setProduct(?Product $product): static
+    public function setProduct(Product $product): static
     {
         $this->product = $product;
 

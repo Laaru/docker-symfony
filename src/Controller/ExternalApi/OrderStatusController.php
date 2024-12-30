@@ -3,15 +3,12 @@
 namespace App\Controller\ExternalApi;
 
 use App\Entity\DTO\OrderStatusUpdateDTO;
-use App\Repository\OrderRepository;
-use App\Repository\OrderStatusRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\Order\OrderStatusService;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route(
@@ -22,9 +19,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class OrderStatusController extends AbstractController
 {
     public function __construct(
-        private readonly OrderRepository $orderRepository,
-        private readonly OrderStatusRepository $orderStatusRepository,
-        private readonly EntityManagerInterface $entityManager
+        private readonly OrderStatusService $orderStatusService
     ) {}
 
     #[Route('/order_status', name: 'change_order_status', methods: ['POST'])]
@@ -41,20 +36,12 @@ class OrderStatusController extends AbstractController
         #[MapRequestPayload]
         OrderStatusUpdateDTO $orderStatusUpdateDTO
     ): JsonResponse {
-        $order = $this->orderRepository->find($orderStatusUpdateDTO->orderId);
-        if (!$order) {
-            throw new HttpException(400, 'Order not found');
-        }
 
-        $status = $this->orderStatusRepository->findOneByExternalId($orderStatusUpdateDTO->statusId);
-        if (!$status) {
-            throw new HttpException(400, 'Order status not found');
-        }
+        $order = $this->orderStatusService->changeStatus($orderStatusUpdateDTO);
 
-        $order->setOrderStatus($status);
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
-
-        return $this->json(data: $this->orderRepository->normalize($order, 'order'));
+        return $this->json(
+            data: $order,
+            context: ['groups' => ['order']]
+        );
     }
 }

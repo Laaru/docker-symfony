@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20241224152052 extends AbstractMigration
+final class Version20241230100543 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -33,7 +33,7 @@ final class Version20241224152052 extends AbstractMigration
         $this->addSql('COMMENT ON COLUMN color.created_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('COMMENT ON COLUMN color.updated_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('CREATE TABLE log (id SERIAL NOT NULL, message TEXT DEFAULT NULL, context JSON DEFAULT NULL, level SMALLINT DEFAULT NULL, level_name VARCHAR(50) DEFAULT NULL, channel VARCHAR(255) DEFAULT NULL, extra JSON DEFAULT NULL, datetime TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, formatted TEXT DEFAULT NULL, PRIMARY KEY(id))');
-        $this->addSql('CREATE TABLE "order" (id SERIAL NOT NULL, user_relation_id INT NOT NULL, order_status_id INT NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, delivery_id INT NOT NULL, payment_id INT NOT NULL, phone VARCHAR(255) NOT NULL, delivery_address_kladr_id INT DEFAULT NULL, delivery_address VARCHAR(255) DEFAULT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE TABLE "order" (id SERIAL NOT NULL, user_relation_id INT NOT NULL, order_status_id INT NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, delivery_id INT NOT NULL, payment_id INT NOT NULL, phone VARCHAR(255) NOT NULL, delivery_address_kladr_id VARCHAR(255) DEFAULT NULL, delivery_address VARCHAR(255) DEFAULT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE INDEX IDX_F52993989B4D58CE ON "order" (user_relation_id)');
         $this->addSql('CREATE INDEX IDX_F5299398D7707B45 ON "order" (order_status_id)');
         $this->addSql('COMMENT ON COLUMN "order".created_at IS \'(DC2Type:datetime_immutable)\'');
@@ -62,7 +62,7 @@ final class Version20241224152052 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_FF575877989D9B62 ON store (slug)');
         $this->addSql('COMMENT ON COLUMN store.created_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('COMMENT ON COLUMN store.updated_at IS \'(DC2Type:datetime_immutable)\'');
-        $this->addSql('CREATE TABLE "user" (id SERIAL NOT NULL, phone VARCHAR(180) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, roles JSON NOT NULL, first_name VARCHAR(255) DEFAULT NULL, last_name VARCHAR(255) DEFAULT NULL, email VARCHAR(255) NOT NULL, password VARCHAR(255) NOT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE TABLE "user" (id SERIAL NOT NULL, phone VARCHAR(180) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, roles JSON NOT NULL, first_name VARCHAR(255) NOT NULL, last_name VARCHAR(255) DEFAULT NULL, email VARCHAR(255) NOT NULL, password VARCHAR(255) NOT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_8D93D649E7927C74 ON "user" (email)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_IDENTIFIER_PHONE ON "user" (phone)');
         $this->addSql('COMMENT ON COLUMN "user".created_at IS \'(DC2Type:datetime_immutable)\'');

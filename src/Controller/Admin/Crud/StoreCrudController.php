@@ -11,6 +11,13 @@ use Symfony\Bundle\SecurityBundle\Security;
 
 class StoreCrudController extends AbstractCrudController
 {
+    private readonly Security $security;
+
+    public function __construct(Security $security)
+    {
+        $this->security = $security;
+    }
+
     public static function getEntityFqcn(): string
     {
         return Store::class;
@@ -21,16 +28,12 @@ class StoreCrudController extends AbstractCrudController
         return $crud->showEntityActionsInlined();
     }
 
-    public function __construct(Security $security)
-    {
-        $this->security = $security;
-    }
-
     public function configureFields(string $pageName): iterable
     {
+        /** @var array $fields */
         $fields = parent::configureFields($pageName);
 
-        if (Crud::PAGE_EDIT === $pageName) {
+        if (Crud::PAGE_EDIT === $pageName || Crud::PAGE_NEW === $pageName) {
             $fields = array_filter($fields, function ($field) {
                 return !in_array($field->getAsDto()->getProperty(), ['createdAt', 'updatedAt']);
             });

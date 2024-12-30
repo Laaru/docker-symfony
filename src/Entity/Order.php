@@ -18,7 +18,7 @@ class Order
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private int $id;
 
     #[Groups(['detail'])]
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
@@ -31,27 +31,27 @@ class Order
     #[Groups(['detail'])]
     #[ORM\ManyToOne(inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?User $userRelation = null;
+    private User $userRelation;
 
     #[Groups(['order'])]
     #[ORM\ManyToOne(inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?OrderStatus $orderStatus = null;
+    private OrderStatus $orderStatus;
 
     #[Groups(['order', 'detail'])]
     #[ORM\OneToMany(targetEntity: OrderItem::class, mappedBy: 'order', cascade: ['persist', 'remove'])]
     private Collection $items;
 
     #[Groups(['order', 'detail'])]
-    #[ORM\Column]
-    private ?int $deliveryId = null;
+    #[ORM\Column(nullable: false)]
+    private int $deliveryId;
 
     #[Groups(['order', 'detail'])]
-    #[ORM\Column]
-    private ?int $paymentId = null;
+    #[ORM\Column(nullable: false)]
+    private int $paymentId;
 
     #[ORM\Column(length: 255)]
-    private ?string $phone = null;
+    private string $phone;
 
     #[ORM\Column(nullable: true)]
     private ?string $deliveryAddressKladrId = null;
@@ -65,7 +65,7 @@ class Order
         $this->items = new ArrayCollection();
     }
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
@@ -94,12 +94,12 @@ class Order
         return $this->updatedAt;
     }
 
-    public function getUserRelation(): ?User
+    public function getUserRelation(): User
     {
         return $this->userRelation;
     }
 
-    public function setUserRelation(?User $userRelation): static
+    public function setUserRelation(User $userRelation): static
     {
         $this->userRelation = $userRelation;
 
@@ -111,7 +111,7 @@ class Order
         return $this->orderStatus;
     }
 
-    public function setOrderStatus(?OrderStatus $orderStatus): static
+    public function setOrderStatus(OrderStatus $orderStatus): static
     {
         $this->orderStatus = $orderStatus;
 
@@ -147,18 +147,6 @@ class Order
         return $this;
     }
 
-    public function removeItemByProduct(Product $product): static
-    {
-        foreach ($this->items as $item) {
-            if ($item->getProduct() === $product) {
-                $this->removeItem($item);
-                break;
-            }
-        }
-
-        return $this;
-    }
-
     public function createAndAddItem(Product $product, int $quantity, int $price): static
     {
         foreach ($this->items as $item) {
@@ -180,7 +168,7 @@ class Order
         return $this;
     }
 
-    public function getDeliveryId(): ?int
+    public function getDeliveryId(): int
     {
         return $this->deliveryId;
     }
@@ -204,7 +192,7 @@ class Order
         return $this;
     }
 
-    public function getPhone(): ?string
+    public function getPhone(): string
     {
         return $this->phone;
     }
@@ -221,7 +209,7 @@ class Order
         return $this->deliveryAddressKladrId;
     }
 
-    public function setDeliveryAddressKladrId(?int $deliveryAddressKladrId): static
+    public function setDeliveryAddressKladrId(?string $deliveryAddressKladrId): static
     {
         $this->deliveryAddressKladrId = $deliveryAddressKladrId;
 

@@ -107,17 +107,16 @@
             "config/routes/nelmio_api_doc.yaml"
         ]
     },
-    "php-amqplib/rabbitmq-bundle": {
-        "version": "2.17",
+    "phpstan/phpstan": {
+        "version": "2.0",
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
             "branch": "main",
-            "version": "1.12",
-            "ref": "ce3ca2e4577270c4f518539aa6b9e878998fcfef"
+            "version": "1.0",
+            "ref": "5e490cc197fb6bb1ae22e5abbc531ddc633b6767"
         },
         "files": [
-            "config/packages/old_sound_rabbit_mq.yaml",
-            "src/Consumer/.gitignore"
+            "phpstan.dist.neon"
         ]
     },
     "phpunit/phpunit": {

@@ -27,6 +27,10 @@ autotest-php-cs:
 	@echo "Running PHP CS..."
 	docker-compose exec -T php php vendor/bin/php-cs-fixer fix --dry-run --diff
 
+autotest-php-stan:
+	@echo "Running PHPStan..."
+	docker-compose exec php php vendor/bin/phpstan analyse --memory-limit=512M
+
 ## —— Php container ————————————————————————————————————————————————————————————————
 sh: ## Connect to the FrankenPHP container
 	docker compose exec php sh
@@ -59,6 +63,9 @@ php-cs:
 php-cs-fix:
 	@$(eval file ?=)
 	docker-compose exec php php vendor/bin/php-cs-fixer fix $(file) --diff
+
+php-stan:
+	docker-compose exec php php vendor/bin/phpstan analyse --memory-limit=512M
 
 ## —— Utilities
 symfony-list:

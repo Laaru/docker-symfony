@@ -54,58 +54,6 @@ services:
     ports:
       - "5432:5432"
 
-  rabbitmq:
-    image: "rabbitmq:3-management"
-    environment:
-      - RABBITMQ_DEFAULT_USER=user_rabbit
-      - RABBITMQ_DEFAULT_PASS=password_rabbit
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-
-  rabbitmq-php-consumer:
-    restart: on-failure
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-user_db}:${POSTGRES_PASSWORD:-password_db}@database:5432/${POSTGRES_DB:-db_app}?serverVersion=${POSTGRES_VERSION:-16}&charset=${POSTGRES_CHARSET:-utf8}
-    build:
-      context: .
-      target: frankenphp_dev
-    depends_on:
-      - rabbitmq
-    volumes:
-      - ./:/app
-    command: ["sh", "-c", "sleep 5 && php bin/console rabbitmq:consumer product_import -vvv"]
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-    networks:
-      - default
-
-  redis-commander:
-    image: rediscommander/redis-commander
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    ports:
-      - "127.0.0.1:8081:8081"
-    depends_on:
-      - redis
-
-  redis-php-consumer:
-    restart: on-failure
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-user_db}:${POSTGRES_PASSWORD:-password_db}@database:5432/${POSTGRES_DB:-db_app}?serverVersion=${POSTGRES_VERSION:-16}&charset=${POSTGRES_CHARSET:-utf8}
-    build:
-      context: .
-      target: frankenphp_dev
-    depends_on:
-      - redis
-    volumes:
-      - ./:/app
-    command: [ "sh", "-c", "sleep 5 && php bin/console messenger:consume redis -vvv" ]
-
   kafka-zookeeper:
     image: wurstmeister/zookeeper:latest
     environment:
@@ -123,7 +71,8 @@ services:
       KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_ZOOKEEPER_CONNECT: kafka-zookeeper:2181
-      KAFKA_CREATE_TOPICS: "order-report:1:1"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CREATE_TOPICS: "product.exchange:1:1,order.report:1:1,user.notification:1:1"
     ports:
       - "9092:9092"
     expose:
@@ -159,6 +108,32 @@ services:
       - kafka
     networks:
       - default
+
+  doctrine-messenger-consumer:
+    restart: on-failure
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-user_db}:${POSTGRES_PASSWORD:-password_db}@database:5432/${POSTGRES_DB:-db_app}?serverVersion=${POSTGRES_VERSION:-16}&charset=${POSTGRES_CHARSET:-utf8}
+    build:
+      context: .
+      target: frankenphp_dev
+    depends_on:
+      - database
+    volumes:
+      - ./:/app
+    command: [ "sh", "-c", "sleep 5 && php bin/console messenger:consume doctrine -vvv" ]
+
+  kafka-php-consumer:
+    restart: on-failure
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-user_db}:${POSTGRES_PASSWORD:-password_db}@database:5432/${POSTGRES_DB:-db_app}?serverVersion=${POSTGRES_VERSION:-16}&charset=${POSTGRES_CHARSET:-utf8}
+    build:
+      context: .
+      target: frankenphp_dev
+    depends_on:
+      - kafka
+    volumes:
+      - ./:/app
+    command: [ "sh", "-c", "sleep 5 && php bin/console kafka:consume:products" ]
 
 volumes:
   caddy_data:

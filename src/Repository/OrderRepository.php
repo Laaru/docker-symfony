@@ -6,11 +6,14 @@ use App\Entity\Order;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
+/**
+ * @extends AbstractRepository<Order>
+ */
 class OrderRepository extends AbstractRepository
 {
     public function __construct(
         ManagerRegistry $registry,
-        private readonly NormalizerInterface $normalizer
+        NormalizerInterface $normalizer
     ) {
         parent::__construct(
             $registry,

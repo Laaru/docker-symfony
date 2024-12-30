@@ -1,0 +1,6 @@
+parameters:
+  kafka_topic_product_exchange: 'product.exchange'
+  kafka_topic_order_reports: 'order.report'
+  kafka_topic_user_notifications: 'user.notification'
+
+  kafka_consumer_group_product_exchange: 'product.consumer.group'

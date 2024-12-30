@@ -15,7 +15,7 @@ readonly class OrderCreatedEvent
         private string $phone,
         private string|int $num,
         private string $deliverySlug,
-        private ?int $addressKladrId,
+        private ?string $addressKladrId,
         private ?string $fullAddress,
         private Collection $items,
     ) {}
@@ -40,7 +40,7 @@ readonly class OrderCreatedEvent
         return $this->deliverySlug;
     }
 
-    public function getAddressKladrId(): ?int
+    public function getAddressKladrId(): ?string
     {
         return $this->addressKladrId;
     }
@@ -50,14 +50,21 @@ readonly class OrderCreatedEvent
         return $this->fullAddress;
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function getItems(): array
     {
         $itemsForEvent = [];
         foreach ($this->items as $orderItem) {
+            $product = $orderItem->getProduct();
+            if (!$product) {
+                continue;
+            }
             $itemsForEvent[] = [
-                'name' => $orderItem->getProduct()->getName(),
+                'name' => $product->getName(),
                 'cost' => $orderItem->getPrice(),
-                'additionalInfo' => $orderItem->getProduct()->getDescription(),
+                'additionalInfo' => $product->getDescription(),
             ];
         }
 

@@ -17,7 +17,10 @@ class PaymentService
         ],
     ];
 
-    public function getPaymentOptions()
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function getPaymentOptions(): array
     {
         return $this::STUBS;
     }

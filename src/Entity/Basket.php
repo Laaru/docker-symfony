@@ -13,7 +13,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\HasLifecycleCallbacks]
 class Basket
 {
-    #[Groups(['basket'])]
+    #[Groups(['basket', 'order'])]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -27,11 +27,11 @@ class Basket
     #[ORM\Column(name: 'updated_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[ORM\OneToOne(inversedBy: 'basket', cascade: ['persist'])]
+    #[ORM\OneToOne(cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
-    private ?User $userRelation = null;
+    private User $userRelation;
 
-    #[Groups(['basket'])]
+    #[Groups(['basket', 'order'])]
     #[ORM\OneToMany(
         targetEntity: BasketItem::class,
         mappedBy: 'basket',
@@ -124,14 +124,20 @@ class Basket
         return $this;
     }
 
-    public function updateItem(int $productId, int $quantity = 1): static
+    public function getItemByProductId(int $productId): ?BasketItem
     {
         foreach ($this->items as $item) {
             if ($item->getProduct()->getId() === $productId) {
-                $item->setQuantity($quantity);
-                break;
+                return $item;
             }
         }
+
+        return null;
+    }
+
+    public function setItemQuantity(BasketItem $item, int $quantity = 1): static
+    {
+        $item->setQuantity($quantity);
 
         return $this;
     }

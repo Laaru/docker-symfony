@@ -5,8 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\Basket;
 use App\Entity\DTO\OrderCreateDTO;
 use App\Entity\Order;
-use App\Repository\BasketRepository;
-use App\Repository\OrderRepository;
+use App\Entity\User;
 use App\Service\Order\OrderCreateService;
 use App\Service\Order\OrderInitService;
 use Nelmio\ApiDocBundle\Attribute\Model;
@@ -14,7 +13,6 @@ use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -27,8 +25,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class OrderController extends AbstractController
 {
     public function __construct(
-        private readonly BasketRepository $basketRepository,
-        private readonly OrderRepository $orderRepository,
         private readonly OrderCreateService $orderCreateService,
         private readonly OrderInitService $orderInitService
     ) {}
@@ -84,18 +80,13 @@ class OrderController extends AbstractController
     )]
     public function initCheckout(): JsonResponse
     {
+        /** @var User $user */
         $user = $this->getUser();
-        $basket = $this->basketRepository->findOneBy(['userRelation' => $user]);
 
-        if (!$basket || $basket->isEmpty()) {
-            throw new HttpException(400, 'Basket is empty');
-        }
-
-        if ($basket->getTotalItemsCount() > 20) {
-            throw new HttpException(400, 'The order cannot contain more than 20 items.');
-        }
-
-        return $this->json(data: $this->orderInitService->init($this->getUser()));
+        return $this->json(
+            data: $this->orderInitService->init($user),
+            context: ['groups' => ['order']]
+        );
     }
 
     #[Route('/make', name: 'make', methods: ['POST'])]
@@ -112,8 +103,14 @@ class OrderController extends AbstractController
         #[MapRequestPayload]
         OrderCreateDTO $orderCreateDTO
     ): JsonResponse {
-        $order = $this->orderCreateService->register($orderCreateDTO, $this->getUser());
+        /** @var User $user */
+        $user = $this->getUser();
 
-        return $this->json($this->orderRepository->normalize($order, 'order'));
+        $order = $this->orderCreateService->create($orderCreateDTO, $user);
+
+        return $this->json(
+            data: $order,
+            context: ['groups' => ['order']]
+        );
     }
 }

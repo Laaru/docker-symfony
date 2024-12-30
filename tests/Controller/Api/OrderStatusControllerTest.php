@@ -2,26 +2,25 @@
 
 namespace App\Tests\Controller\Api;
 
-use App\Repository\OrderRepository;
-use App\Repository\UserRepository;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\AbstractTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-class OrderStatusControllerTest extends WebTestCase
+class OrderStatusControllerTest extends AbstractTestCase
 {
     public function testChangeOrderStatus(): void
     {
         $client = self::createClient();
 
-        $userRepository = static::getContainer()->get(UserRepository::class);
-        $testUser = $userRepository->findOneByEmail('external-api');
+        $testUser = $this->getTestUserByEmail('external-api');
         $client->loginUser($testUser);
+        $lastOrder = $this->getLastOrder();
 
-        $orderRepository = static::getContainer()->get(OrderRepository::class);
-        $lastOrder = $orderRepository->getLastOrder();
+        $statusExternalId = 7;
 
-        $statusExternalid = 7;
-
+        $content = json_encode([
+            'orderId' => $lastOrder->getId(),
+            'statusId' => $statusExternalId,
+        ]);
         $client->request(
             method: 'POST',
             uri: '/external_api/order_status',
@@ -29,22 +28,21 @@ class OrderStatusControllerTest extends WebTestCase
                 'HTTP_auth-token' => 'external-api-secret-key',
                 'CONTENT_TYPE' => 'application/json',
             ],
-            content: json_encode([
-                'orderId' => $lastOrder->getId(),
-                'statusId' => $statusExternalid,
-            ])
+            content: false === $content ? null : $content
         );
         $response = $client->getResponse();
 
         $this->assertInstanceOf(Response::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $responseData = json_decode($response->getContent(), true);
+        $responseData = $response->getContent()
+            ? json_decode($response->getContent(), true)
+            : [];
         $this->assertArrayHasKey('id', $responseData);
         $this->assertEquals(
             $responseData['orderStatus']['externalId'],
-            $statusExternalid,
-            'Order status externalId must be '.$statusExternalid
+            $statusExternalId,
+            'Order status externalId must be ' . $statusExternalId
         );
     }
 }

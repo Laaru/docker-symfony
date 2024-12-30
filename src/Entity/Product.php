@@ -19,11 +19,11 @@ class Product
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, nullable: false)]
-    private ?int $id = null;
+    private int $id;
 
     #[Groups(['detail', 'basket', 'order'])]
     #[ORM\Column(name: 'external_id', type: Types::INTEGER, unique: true, nullable: false)]
-    private ?int $externalId = null;
+    private int $externalId;
 
     #[Groups(['detail'])]
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
@@ -35,15 +35,15 @@ class Product
 
     #[Groups(['list', 'detail', 'basket', 'order'])]
     #[ORM\Column(type: Types::STRING, nullable: false)]
-    private ?string $name = null;
+    private string $name;
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::STRING, length: 255, unique: true, nullable: false)]
-    private ?string $slug = null;
+    private string $slug;
 
     #[Groups(['list', 'detail', 'basket'])]
     #[ORM\Column(name: 'base_price', type: Types::INTEGER, nullable: false)]
-    private ?int $basePrice = null;
+    private int $basePrice;
 
     #[Groups(['list', 'detail', 'basket'])]
     #[ORM\Column(name: 'sale_price', type: Types::INTEGER, nullable: true)]
@@ -63,34 +63,34 @@ class Product
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::INTEGER, nullable: false)]
-    private ?int $weight = null;
+    private int $weight;
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::INTEGER, nullable: false)]
-    private ?int $height = null;
+    private int $height;
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::INTEGER, nullable: false)]
-    private ?int $width = null;
+    private int $width;
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::INTEGER, nullable: false)]
-    private ?int $length = null;
+    private int $length;
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::INTEGER, nullable: false)]
-    private ?int $tax = null;
+    private int $tax;
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::INTEGER, nullable: false)]
-    private ?int $version = null;
+    private int $version;
 
     public function __construct()
     {
         $this->stores = new ArrayCollection();
     }
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
@@ -143,7 +143,7 @@ class Product
         return $this;
     }
 
-    public function getBasePrice(): ?int
+    public function getBasePrice(): int
     {
         return $this->basePrice;
     }

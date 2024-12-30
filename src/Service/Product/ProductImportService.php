@@ -2,6 +2,8 @@
 
 namespace App\Service\Product;
 
+use App\Entity\Color;
+use App\Entity\DTO\Collection\ProductDTOCollection;
 use App\Entity\DTO\ProductUpdateDTO;
 use App\Entity\Product;
 use App\Repository\ColorRepository;
@@ -10,61 +12,45 @@ use App\Repository\StoreRepository;
 use Cocur\Slugify\Slugify;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ProductImportService
 {
     private Slugify $slugify;
-    private ColorRepository $colorRepository;
-    private ProductRepository $productRepository;
-    private StoreRepository $storeRepository;
-    private EntityManagerInterface $entityManager;
-    private ValidatorInterface $validator;
-    private LoggerInterface $logger;
 
     public function __construct(
-        EntityManagerInterface $entityManager,
-        ValidatorInterface $validator,
-        ProductRepository $productRepository,
-        ColorRepository $colorRepository,
-        StoreRepository $storeRepository,
-        LoggerInterface $logger
+        private readonly EntityManagerInterface $entityManager,
+        private readonly ValidatorInterface $validator,
+        private readonly ProductRepository $productRepository,
+        private readonly ColorRepository $colorRepository,
+        private readonly StoreRepository $storeRepository,
+        private readonly LoggerInterface $logger
     ) {
         $this->slugify = new Slugify();
-        $this->colorRepository = $colorRepository;
-        $this->productRepository = $productRepository;
-        $this->storeRepository = $storeRepository;
-        $this->entityManager = $entityManager;
-        $this->validator = $validator;
-        $this->logger = $logger;
     }
 
-    public function importMultipleProducts(array $products): void
+    public function importMultipleProducts(ProductDTOCollection $products): void
     {
-        if (!is_array(current($products))) {
-            $products = [$products];
-        }
-
-        $this->logger->info('Import started. Products to import: '.count($products), $products);
+        $this->logger->info('Import started. Products to import: ' . $products->count());
         $importedProducts = 0;
 
-        foreach ($products as $productData) {
+        /** @var ProductUpdateDTO $productUpdateDTO */
+        foreach ($products as $productUpdateDTO) {
             try {
-                $productDTO = $this->validateImportData($productData);
-                $this->importOneProduct($productDTO);
+                $this->validateProductUpdateDTO($productUpdateDTO);
+                $this->importOneProduct($productUpdateDTO);
 
                 ++$importedProducts;
             } catch (\Exception $e) {
                 $this->logger->warning('Failed to import product', [
                     'error' => $e->getMessage(),
-                    'data' => $productData,
+                    'data' => $productUpdateDTO,
                 ]);
             }
         }
 
-        $this->logger->info('Import finished. Imported products: '.$importedProducts);
+        $this->logger->info('Import finished. Imported products: ' . $importedProducts);
     }
 
     /**
@@ -83,34 +69,17 @@ class ProductImportService
     /**
      * @throws \Exception
      */
-    private function validateImportData(array $productData): ProductUpdateDTO
+    private function validateProductUpdateDTO(ProductUpdateDTO $productUpdateDTO): void
     {
-        $productDTO = new ProductUpdateDTO(
-            externalId: $productData['id'] ?? $productData['external_id'] ?? null,
-            name: $productData['name'] ?? null,
-            basePrice: $productData['cost'] ?? $productData['base_price'] ?? $productData['basePrice'] ?? null,
-            salePrice: $productData['sale_price'] ?? $productData['salePrice'] ?? null,
-            description: $productData['description'] ?? null,
-            colorExternalId: $productData['color'] ?? null,
-            storesExternalIds: $productData['stores'] ?? $productData['inStockInStores'] ?? null,
-            weight: $productData['measurements']['weight'] ?? $productData['weight'] ?? null,
-            height: $productData['measurements']['height'] ?? $productData['height'] ?? null,
-            width: $productData['measurements']['width'] ?? $productData['width'] ?? null,
-            length: $productData['measurements']['length'] ?? $productData['length'] ?? null,
-            tax: $productData['tax'] ?? null,
-            version: $productData['version'] ?? null
-        );
-
-        $errors = $this->validator->validate($productDTO);
+        $errors = $this->validator->validate($productUpdateDTO);
         if ($errors->count() > 0) {
-            throw new UnprocessableEntityHttpException('', new ValidationFailedException('', $errors));
+            throw new ValidationFailedException('', $errors);
         }
-
-        return $productDTO;
     }
 
     private function prepareProductEntity(ProductUpdateDTO $productDTO): Product
     {
+        /** @var Product $product */
         $product = $this->productRepository->findOneByExternalId($productDTO->externalId);
 
         if (!$product) {
@@ -118,7 +87,7 @@ class ProductImportService
         }
 
         $product->setName($productDTO->name);
-        $product->setSlug($this->slugify->slugify($productDTO->name).'_'.$productDTO->externalId);
+        $product->setSlug($this->slugify->slugify($productDTO->name) . '_' . $productDTO->externalId);
         $product->setDescription($productDTO->description);
         $product->setLength($productDTO->length);
         $product->setWidth($productDTO->width);
@@ -131,6 +100,7 @@ class ProductImportService
         $product->setVersion($productDTO->version);
 
         if (!empty($productDTO->colorExternalId)) {
+            /** @var Color $color */
             $color = $this->colorRepository->findOneByExternalId($productDTO->colorExternalId);
             if ($color) {
                 $product->setColor($color);

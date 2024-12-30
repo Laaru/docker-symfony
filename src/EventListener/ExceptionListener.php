@@ -21,13 +21,21 @@ class ExceptionListener
         $errors = [];
 
         $previousException = $throwable->getPrevious();
-        if ($previousException instanceof ValidationFailedException) {
+        $isValidationException = false;
+        if ($throwable instanceof ValidationFailedException) {
+            $isValidationException = true;
+        } elseif ($previousException instanceof ValidationFailedException) {
+            $throwable = $previousException;
+            $isValidationException = true;
+        }
+
+        if ($isValidationException) {
             $errors['fatal'] = [
                 'code' => Response::HTTP_UNPROCESSABLE_ENTITY,
                 'message' => Response::$statusTexts[Response::HTTP_UNPROCESSABLE_ENTITY],
             ];
 
-            foreach ($previousException->getViolations() as $error) {
+            foreach ($throwable->getViolations() as $error) {
                 $errors['validation'][] = [
                     'property' => $error->getPropertyPath(),
                     'message' => $error->getMessage(),
@@ -40,16 +48,16 @@ class ExceptionListener
             ];
         }
 
-        $response = new JsonResponse();
-        $response->setData([
-            'errors' => $errors,
-        ]);
-        $response->setStatusCode(
-            method_exists($throwable, 'getStatusCode')
-                ? $throwable->getStatusCode()
-                : Response::HTTP_INTERNAL_SERVER_ERROR
-        );
+        $responseCode = match (true) {
+            $isValidationException => Response::HTTP_UNPROCESSABLE_ENTITY,
+            method_exists($throwable, 'getStatusCode') && $throwable->getStatusCode() > 0 => $throwable->getStatusCode(),
+            $throwable->getCode() > 0 => $throwable->getCode(),
+            default => Response::HTTP_INTERNAL_SERVER_ERROR,
+        };
 
-        $event->setResponse($response);
+        $event->setResponse(new JsonResponse(
+            data: ['errors' => $errors],
+            status: $responseCode
+        ));
     }
 }

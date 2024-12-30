@@ -24,7 +24,6 @@ RUN set -eux; \
         pdo_pgsql \
         pcntl \
         sockets \
-        redis \
         rdkafka \
 	;
 

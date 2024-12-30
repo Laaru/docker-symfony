@@ -13,12 +13,9 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class CacheInvalidationListener
 {
-    private TagAwareCacheInterface $cache;
-
-    public function __construct(TagAwareCacheInterface $cache)
-    {
-        $this->cache = $cache;
-    }
+    public function __construct(
+        private readonly TagAwareCacheInterface $cache
+    ) {}
 
     public function postUpdate(PostUpdateEventArgs $args): void
     {

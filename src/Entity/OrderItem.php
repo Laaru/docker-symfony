@@ -23,7 +23,7 @@ class OrderItem
     #[Groups(['list', 'detail', 'order'])]
     #[ORM\ManyToOne(targetEntity: Product::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private ?Product $product = null;
+    private Product $product;
 
     #[Groups(['list', 'detail', 'order'])]
     #[ORM\Column]
@@ -55,7 +55,7 @@ class OrderItem
         return $this->product;
     }
 
-    public function setProduct(?Product $product): static
+    public function setProduct(Product $product): static
     {
         $this->product = $product;
 
