@@ -5,6 +5,9 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
 
+imports:
+    - { resource: packages/kafka.yaml }
+
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -19,11 +22,6 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
-            - '../src/Service/'                 # services configured manually
-            - '../src/Command/'                 # commands configured manually
-            - '../src/EventListener/'           # EventListeners configured manually
-            - '../src/EventSubscriber/'         # EventSubscribers configured manually
-            - '../src/Consumer/'                # Consumers configured manually
 
     ###################################################################
     # MANUAL CONFIGURATIONS
@@ -38,20 +36,17 @@ services:
             $storeRepository: '@App\Repository\StoreRepository'
             $logger: '@monolog.logger.product:import'
 
-    App\Service\User\UserRegisterService:
-        arguments:
-            $userRepository: '@App\Repository\UserRepository'
-            $entityManager:  '@doctrine.orm.default_entity_manager'
-            $passwordHasher: '@security.password_hasher'
-            $eventDispatcher: '@Psr\EventDispatcher\EventDispatcherInterface'
-
     App\Service\Notification\Email\StubEmailNotificationProvider:
         arguments:
             $logger: '@monolog.logger.stub:notification_email'
+            $producerService: '@App\Producer\KafkaProducerService'
+            $kafkaTopic: '%kafka_topic_user_notifications%'
 
     App\Service\Notification\Sms\StubSmsNotificationProvider:
         arguments:
             $logger: '@monolog.logger.stub:notification_sms'
+            $producerService: '@App\Producer\KafkaProducerService'
+            $kafkaTopic: '%kafka_topic_user_notifications%'
 
     App\Service\Order\OrderCreateService:
         arguments:
@@ -74,26 +69,38 @@ services:
     App\Service\Order\OrderReportService:
         arguments:
             $bus: '@messenger.bus.default'
-            $kafkaProducerService: '@App\Service\Producer\KafkaProducerService'
+            $kafkaProducerService: '@App\Producer\KafkaProducerService'
             $parameterBag: '@parameter_bag'
             $orderRepository:  '@App\Repository\OrderRepository'
+            $kafkaTopic: '%kafka_topic_order_reports%'
 
-
-    App\Service\Delivery\DeliveryService:
-
-    App\Service\Payment\PaymentService:
-
-    App\Service\Producer\KafkaProducerService:
+    # Consumers
+    App\Consumer\KafkaProductConsumer:
         arguments:
             $kafkaBroker: '%env(KAFKA_BROKER)%'
-            $topicName: '%env(KAFKA_TOPIC)%'
-    
+            $kafkaTopic: '%kafka_topic_product_exchange%'
+            $kafkaConsumerGroup: '%kafka_topic_product_exchange%'
+            $logger: '@monolog.logger.consumer:product'
+            $productImportService: '@App\Service\Product\ProductImportService'
+            $productUpdateDTOFactory: '@App\Factory\ProductUpdateDTOFactory'
+
+    # Producers
+    App\Producer\KafkaProducerService:
+        arguments:
+            $logger: '@monolog.logger.consumer:product'
+            $kafkaBroker: '%env(KAFKA_BROKER)%'
+
     # Commands
+    App\Command\KafkaProductConsumerCommand:
+        arguments:
+            $kafkaConsumerService: '@App\Consumer\KafkaProductConsumer'
+
     App\Command\GenerateMockExchangeProductsCommand:
         tags: [ 'console.command' ]
         arguments:
             $logger: '@monolog.logger.command:product_seeder'
-            $productProducer: '@old_sound_rabbit_mq.product_export_producer'
+            $producerService: '@App\Producer\KafkaProducerService'
+            $kafkaTopic: '%kafka_topic_product_exchange%'
 
     # EventListeners
     App\EventListener\ExceptionListener:
@@ -105,6 +112,12 @@ services:
             - { name: doctrine.event_listener, event: postUpdate }
             - { name: doctrine.event_listener, event: postRemove }
             - { name: doctrine.event_listener, event: postPersist }
+
+    App\EventListener\UserPasswordHashingListener:
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate, entity: 'App\Entity\User' }
+        arguments:
+            $passwordHasher: '@security.password_hasher'
 
     # EventSubscribers
     App\EventSubscriber\NotificationSubscriber:
@@ -120,14 +133,6 @@ services:
 
     App\Service\Notification\Sms\SmsNotificationProviderInterface:
         alias: App\Service\Notification\Sms\StubSmsNotificationProvider
-
-    # Consumers
-    App\Consumer\ProductImportConsumer:
-        arguments:
-            $logger: '@monolog.logger.consumer:product'
-            $productImportService: '@App\Service\Product\ProductImportService'
-        tags:
-            - { name: 'old_sound_rabbit_mq.product_import', connection: 'default', queue: 'products_queue' }
 
     # Security
     App\Security\ExternalApiAuthenticator:

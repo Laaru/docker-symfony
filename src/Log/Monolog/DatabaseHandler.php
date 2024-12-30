@@ -3,6 +3,7 @@
 namespace App\Log\Monolog;
 
 use App\Entity\Log;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\LogRecord;
@@ -18,6 +19,11 @@ class DatabaseHandler extends AbstractProcessingHandler
         $this->entityManager = $entityManager;
     }
 
+    /**
+     * @param array<mixed>|LogRecord $record
+     *
+     * @throws Exception
+     */
     protected function write(array|LogRecord $record): void
     {
         $connection = $this->entityManager->getConnection();

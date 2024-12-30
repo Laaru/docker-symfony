@@ -4,16 +4,13 @@ namespace App\Controller\Api;
 
 use App\Entity\DTO\ProductUpdateDTO;
 use App\Entity\Product;
-use App\Repository\ProductRepository;
-use App\Service\Product\ProductImportService;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\Product\ProductService;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(
@@ -24,8 +21,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class ProductController extends AbstractController
 {
     public function __construct(
-        private readonly ProductRepository $productRepository,
-        private readonly EntityManagerInterface $entityManager
+        private readonly ProductService $productService
     ) {}
 
     /**
@@ -75,18 +71,15 @@ class ProductController extends AbstractController
     )]
     public function createProduct(
         #[MapRequestPayload]
-        ProductUpdateDTO $productUpdateDTO,
-        ProductImportService $productImportService
+        ProductUpdateDTO $productUpdateDTO
     ): Response {
-        $product = $this->productRepository->findOneByExternalId($productUpdateDTO->externalId);
 
-        if ($product) {
-            throw new ConflictHttpException('Product with externalId '.$productUpdateDTO->externalId.' already exists. Use PUT method instead.');
-        }
+        $product = $this->productService->createProduct($productUpdateDTO);
 
-        $product = $productImportService->importOneProduct($productUpdateDTO);
-
-        return $this->json(data: $this->productRepository->normalize($product));
+        return $this->json(
+            data: $product,
+            context: ['groups' => ['detail']]
+        );
     }
 
     #[Route(
@@ -124,13 +117,13 @@ class ProductController extends AbstractController
     )]
     public function readProduct(int $id): JsonResponse
     {
-        $product = $this->productRepository->find($id);
 
-        if (!$product) {
-            throw $this->createNotFoundException('No product found for id '.$id);
-        }
+        $product = $this->productService->readProduct($id);
 
-        return $this->json(data: $this->productRepository->normalize($product));
+        return $this->json(
+            data: $product,
+            context: ['groups' => ['detail']]
+        );
     }
 
     #[Route(
@@ -198,17 +191,15 @@ class ProductController extends AbstractController
     public function updateProduct(
         #[MapRequestPayload]
         ProductUpdateDTO $productUpdateDTO,
-        int $id,
-        ProductImportService $productImportService
+        int $id
     ): Response {
-        $product = $this->productRepository->find($id);
-        if (!$product) {
-            throw $this->createNotFoundException('No product found for id '.$id);
-        }
 
-        $product = $productImportService->importOneProduct($productUpdateDTO);
+        $product = $this->productService->updateProduct($id, $productUpdateDTO);
 
-        return $this->json(data: $this->productRepository->normalize($product));
+        return $this->json(
+            data: $product,
+            context: ['groups' => ['detail']]
+        );
     }
 
     #[Route(
@@ -261,17 +252,11 @@ class ProductController extends AbstractController
     )]
     public function deleteProduct(int $id): Response
     {
-        $product = $this->productRepository->find($id);
 
-        if (!$product) {
-            throw $this->createNotFoundException('No product found for id '.$id);
-        }
-
-        $this->entityManager->remove($product);
-        $this->entityManager->flush();
+        $this->productService->deleteProduct($id);
 
         return $this->json(data: [
-            'message' => 'product removed: '.$product->getName(),
+            'message' => "product deleted: $id",
         ]);
     }
 }

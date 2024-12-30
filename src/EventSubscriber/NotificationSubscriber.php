@@ -9,11 +9,11 @@ use App\Service\Notification\Sms\SmsNotificationProviderInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Uid\Uuid;
 
-class NotificationSubscriber implements EventSubscriberInterface
+readonly class NotificationSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private readonly EmailNotificationProviderInterface $emailNotificationProvider,
-        private readonly SmsNotificationProviderInterface $smsNotificationProvider
+        private EmailNotificationProviderInterface $emailNotificationProvider,
+        private SmsNotificationProviderInterface $smsNotificationProvider
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -24,7 +24,7 @@ class NotificationSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function onUserRegistered(UserRegisteredEvent $event)
+    public function onUserRegistered(UserRegisteredEvent $event): void
     {
         $email = $event->getEmail();
         $phone = $event->getPhone();
@@ -41,7 +41,7 @@ class NotificationSubscriber implements EventSubscriberInterface
         ]);
     }
 
-    public function onOrderCreated(OrderCreatedEvent $event)
+    public function onOrderCreated(OrderCreatedEvent $event): void
     {
         $commonData = [
             'notificationType' => 'requires_payment',

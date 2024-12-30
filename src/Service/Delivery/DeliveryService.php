@@ -17,12 +17,15 @@ class DeliveryService
         ],
     ];
 
-    public function getDeliveryOptions()
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function getDeliveryOptions(): array
     {
         return $this::STUBS;
     }
 
-    public function getDeliverySlugById(int $id): ?string
+    public function getDeliverySlugById(int $id): string
     {
         foreach ($this::STUBS as $delivery) {
             if ($delivery['id'] === $id) {
@@ -30,6 +33,6 @@ class DeliveryService
             }
         }
 
-        return null;
+        return '';
     }
 }

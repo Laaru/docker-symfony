@@ -23,7 +23,7 @@ class Store
 
     #[Groups(['detail'])]
     #[ORM\Column(name: 'external_id', type: Types::INTEGER, unique: true, nullable: false)]
-    private ?int $externalId = null;
+    private int $externalId;
 
     #[Groups(['detail'])]
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
@@ -35,11 +35,11 @@ class Store
 
     #[Groups(['list', 'detail'])]
     #[ORM\Column(type: Types::STRING, nullable: false)]
-    private ?string $name = null;
+    private string $name;
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::STRING, length: 255, unique: true, nullable: false)]
-    private ?string $slug = null;
+    private string $slug;
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
@@ -139,24 +139,5 @@ class Store
     public function getProducts(): Collection
     {
         return $this->products;
-    }
-
-    public function addProductsInStock(Product $productsInStock): static
-    {
-        if (!$this->products->contains($productsInStock)) {
-            $this->products->add($productsInStock);
-            $productsInStock->addInStockInStore($this);
-        }
-
-        return $this;
-    }
-
-    public function removeProductsInStock(Product $productsInStock): static
-    {
-        if ($this->products->removeElement($productsInStock)) {
-            $productsInStock->removeInStockInStore($this);
-        }
-
-        return $this;
     }
 }

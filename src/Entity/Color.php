@@ -24,7 +24,7 @@ class Color
 
     #[Groups(['detail'])]
     #[ORM\Column(name: 'external_id', type: Types::INTEGER, unique: true, nullable: false)]
-    private ?int $externalId = null;
+    private int $externalId;
 
     #[Groups(['detail'])]
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
@@ -36,11 +36,11 @@ class Color
 
     #[Groups(['list', 'detail'])]
     #[ORM\Column(type: Types::STRING, nullable: false)]
-    private ?string $name = null;
+    private string $name;
 
     #[Groups(['detail'])]
     #[ORM\Column(type: Types::STRING, length: 255, unique: true, nullable: false)]
-    private ?string $slug = null;
+    private string $slug;
 
     /**
      * @var Collection<int, Product>
@@ -115,35 +115,6 @@ class Color
     public function setSlug(string $slug): static
     {
         $this->slug = $slug;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Product>
-     */
-    public function getProducts(): Collection
-    {
-        return $this->products;
-    }
-
-    public function addProduct(Product $product): static
-    {
-        if (!$this->products->contains($product)) {
-            $this->products->add($product);
-            $product->setColor($this);
-        }
-
-        return $this;
-    }
-
-    public function removeProduct(Product $product): static
-    {
-        if ($this->products->removeElement($product)) {
-            if ($product->getColor() === $this) {
-                $product->setColor(null);
-            }
-        }
 
         return $this;
     }

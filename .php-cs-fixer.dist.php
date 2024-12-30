@@ -31,7 +31,8 @@ return (new PhpCsFixer\Config())
         'trailing_comma_in_multiline' => true,
         'no_unused_imports' => true,
         'include' => true,
-        'single_line_empty_body' => true
+        'single_line_empty_body' => true,
+        'concat_space' => ['spacing' => 'one'],
     ])
     ->setFinder(
         (Finder::create())->in(

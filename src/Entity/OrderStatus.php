@@ -23,7 +23,7 @@ class OrderStatus
 
     #[Groups(['detail', 'order'])]
     #[ORM\Column(name: 'external_id', type: Types::INTEGER, unique: true, nullable: false)]
-    private ?int $externalId = null;
+    private int $externalId;
 
     #[Groups(['detail'])]
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
@@ -35,11 +35,11 @@ class OrderStatus
 
     #[Groups(['list', 'detail', 'order'])]
     #[ORM\Column(type: Types::STRING, nullable: false)]
-    private ?string $name = null;
+    private string $name;
 
     #[Groups(['detail', 'order'])]
     #[ORM\Column(type: Types::STRING, length: 255, unique: true, nullable: false)]
-    private ?string $slug = null;
+    private string $slug;
 
     #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'orderStatus')]
     private Collection $orders;
@@ -120,26 +120,5 @@ class OrderStatus
     public function getOrders(): Collection
     {
         return $this->orders;
-    }
-
-    public function addOrder(Order $order): static
-    {
-        if (!$this->orders->contains($order)) {
-            $this->orders->add($order);
-            $order->setOrderStatus($this);
-        }
-
-        return $this;
-    }
-
-    public function removeOrder(Order $order): static
-    {
-        if ($this->orders->removeElement($order)) {
-            if ($order->getOrderStatus() === $this) {
-                $order->setOrderStatus(null);
-            }
-        }
-
-        return $this;
     }
 }

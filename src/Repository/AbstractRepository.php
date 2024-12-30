@@ -6,6 +6,11 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
+/**
+ * @template T of object
+ *
+ * @extends ServiceEntityRepository<T>
+ */
 abstract class AbstractRepository extends ServiceEntityRepository
 {
     public function __construct(
@@ -16,15 +21,20 @@ abstract class AbstractRepository extends ServiceEntityRepository
         parent::__construct($registry, $entityClass);
     }
 
-    public function normalize(object $entity, string $scope = 'detail')
+    public function normalize(object $entity, string $group = 'detail'): mixed
     {
         return $this->normalizer->normalize(
             $entity,
             null,
-            ['groups' => $scope]
+            ['groups' => $group]
         );
     }
 
+    /**
+     * @param iterable<object> $entities
+     *
+     * @return array<mixed>
+     */
     public function normalizeCollection(iterable $entities, string $scope = 'detail'): array
     {
         $normalizedData = [];
@@ -50,6 +60,11 @@ abstract class AbstractRepository extends ServiceEntityRepository
         return $this->findOneBy(['externalId' => $externalId]);
     }
 
+    /**
+     * @param array<int> $externalIds
+     *
+     * @return array<mixed>
+     */
     public function findManyByExternalIds(array $externalIds): array
     {
         return $this->createQueryBuilder('e')

@@ -2,9 +2,9 @@
 
 namespace App\Command;
 
+use App\Producer\KafkaProducerService;
 use Faker\Factory;
 use Faker\Generator;
-use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -14,32 +14,31 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'mock:products')]
 class GenerateMockExchangeProductsCommand extends Command
 {
-    private ProducerInterface $producer;
     private Generator $faker;
-    private LoggerInterface $logger;
 
-    public function __construct(ProducerInterface $productProducer, LoggerInterface $logger)
-    {
+    public function __construct(
+        private readonly KafkaProducerService $producerService,
+        private readonly LoggerInterface $logger,
+        private readonly string $kafkaTopic
+    ) {
         parent::__construct();
-        $this->producer = $productProducer;
         $this->faker = Factory::create();
-        $this->logger = $logger;
     }
 
     protected function configure(): void
     {
-        $this->setDescription('Generates mock products in RabbitMQ');
+        $this->setDescription('Generates mock products in Kafka');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $message = '--- seeding products to RabbitMQ ---';
+        $message = '--- seeding products to Kafka ---';
         $output->writeln([$message]);
-        $this->logger->info($message);
 
-        for ($i = 1; $i <= 10; ++$i) {
-            $product = [
-                'id' => $i + 1000000,
+        $products = [];
+        for ($i = 1; $i <= mt_rand(5, 20); ++$i) {
+            $products[] = [
+                'id' => mt_rand(1, 999999),
                 'name' => $this->faker->sentence(mt_rand(1, 2)),
                 'measurements' => [
                     'height' => mt_rand(10, 1000),
@@ -54,13 +53,13 @@ class GenerateMockExchangeProductsCommand extends Command
                 'color' => mt_rand(1, 10),
                 'stores' => $this->faker->randomElements(range(1, 20), mt_rand(1, 5)),
             ];
-
-            $this->producer->publish(json_encode($product));
         }
+        $this->producerService->sendMessage($products, $this->kafkaTopic);
 
-        $message = "--- sent $i products to Rabbit MQ ---";
+
+        $message = "--- sent $i products to Kafka ---";
         $output->writeln($message);
-        $this->logger->info($message);
+        $this->logger->info("mock:products command $message");
 
         return Command::SUCCESS;
     }

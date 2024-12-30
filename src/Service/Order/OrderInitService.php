@@ -2,6 +2,8 @@
 
 namespace App\Service\Order;
 
+use App\Entity\Basket;
+use App\Entity\DTO\OrderInitDto;
 use App\Entity\User;
 use App\Repository\BasketRepository;
 use App\Service\Delivery\DeliveryService;
@@ -16,15 +18,16 @@ class OrderInitService
         private readonly PaymentService $paymentService
     ) {}
 
-    public function init(User $user): array
+    public function init(User $user): OrderInitDto
     {
+        /** @var Basket $basket */
         $basket = $this->basketRepository->findOneBy(['userRelation' => $user]);
         $this->orderRestrictionService->checkRestriction($basket);
 
-        return [
-            'basket' => $this->basketRepository->normalize($basket, 'basket'),
-            'deliveryOptions' => $this->deliveryService->getDeliveryOptions(),
-            'paymentOptions' => $this->paymentService->getPaymentOptions(),
-        ];
+        return new OrderInitDto(
+            $basket,
+            $this->deliveryService->getDeliveryOptions(),
+            $this->paymentService->getPaymentOptions()
+        );
     }
 }

@@ -15,6 +15,13 @@ use Symfony\Bundle\SecurityBundle\Security;
 
 class BasketCrudController extends AbstractCrudController
 {
+    private readonly Security $security;
+
+    public function __construct(Security $security)
+    {
+        $this->security = $security;
+    }
+
     public static function getEntityFqcn(): string
     {
         return Basket::class;
@@ -23,11 +30,6 @@ class BasketCrudController extends AbstractCrudController
     public function configureCrud(Crud $crud): Crud
     {
         return $crud->showEntityActionsInlined();
-    }
-
-    public function __construct(Security $security)
-    {
-        $this->security = $security;
     }
 
     public function configureActions(Actions $actions): Actions
@@ -49,9 +51,10 @@ class BasketCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
+        /** @var array $fields */
         $fields = parent::configureFields($pageName);
 
-        if (Crud::PAGE_EDIT === $pageName) {
+        if (Crud::PAGE_EDIT === $pageName || Crud::PAGE_NEW === $pageName) {
             $fields = array_filter($fields, function ($field) {
                 return !in_array($field->getAsDto()->getProperty(), ['createdAt', 'updatedAt']);
             });

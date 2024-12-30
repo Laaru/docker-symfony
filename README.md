@@ -6,8 +6,6 @@ A [Docker](https://www.docker.com/)-based test project with the [Symfony](https:
 * Symfony 7.2
 * PHP 8.3
 * postgres (PostgreSQL) 16.6
-* RabbitMQ 3.13.7
-* Redis 7.4.1
 * Kafka 2.8.1
 
 
@@ -23,13 +21,9 @@ A [Docker](https://www.docker.com/)-based test project with the [Symfony](https:
 * Admin panel interface:       https://localhost:5000/admin
     * Username: admin
     * Password: password
-* RabbitMQ admin panel:        http://localhost:15672/
-    * Username: user_rabbit
-    * Password: password_rabbit
 * Kafka AKHQ admin panel       http://localhost:8080/
     * Username: admin
     * Password: password
-* Redis admin panel:           http://localhost:8081/
 
 ## Credentials
 * admin [ROLE_ADMIN]
@@ -41,5 +35,5 @@ A [Docker](https://www.docker.com/)-based test project with the [Symfony](https:
 * External API key: external-api-secret-key
 
 ## Additional features
-* Use the `mock:products` command to seed the products table with additional products via RabbitMQ. For faster usage, use the Make command: `make symfony arg="mock:products"`
+* Use the `mock:products` command to seed the products table with additional products via kafka. For faster usage, use the Make command: `make symfony arg="mock:products"`
 * Order reports can be generated via the `external_api/order_report` endpoint. Reports are stored in `public/reports/orders`.

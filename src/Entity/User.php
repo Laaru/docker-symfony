@@ -3,8 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -21,11 +19,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private int $id;
 
     #[Groups(['detail'])]
     #[ORM\Column(length: 180, unique: true, nullable: false)]
-    private ?string $phone = null;
+    private string $phone;
 
     #[Groups(['detail'])]
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
@@ -43,8 +41,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = [];
 
     #[Groups(['detail'])]
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $firstName = null;
+    #[ORM\Column(length: 255)]
+    private string $firstName;
 
     #[Groups(['detail'])]
     #[ORM\Column(length: 255, nullable: true)]
@@ -52,31 +50,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[Groups(['detail'])]
     #[ORM\Column(length: 255, unique: true, nullable: false)]
-    private ?string $email = null;
+    private string $email;
 
     #[ORM\Column(length: 255)]
-    private ?string $password = null;
+    private string $password;
 
-    #[ORM\OneToOne(mappedBy: 'userRelation', cascade: ['persist', 'remove'])]
-    private ?Basket $basket = null;
-
-    /**
-     * @var Collection<int, Order>
-     */
-    #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'userRelation')]
-    private Collection $orders;
-
-    public function __construct()
-    {
-        $this->orders = new ArrayCollection();
-    }
-
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
 
-    public function getPhone(): ?string
+    public function getPhone(): string
     {
         return $this->phone;
     }
@@ -116,18 +100,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * A visual identifier that represents this user.
      *
      * @see UserInterface
+     *
+     * @returns non-empty-string
      */
     public function getUserIdentifier(): string
     {
-        return (string) $this->phone;
+        if (empty($this->phone)) {
+            throw new \RuntimeException('Phone number cannot be empty');
+        }
+
+        return $this->phone;
     }
 
-    public function getFirstName(): ?string
+    public function getFirstName(): string
     {
         return $this->firstName;
     }
 
-    public function setFirstName(?string $firstName): static
+    public function setFirstName(string $firstName): static
     {
         $this->firstName = $firstName;
 
@@ -146,7 +136,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getEmail(): ?string
+    public function getEmail(): string
     {
         return $this->email;
     }
@@ -158,7 +148,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getPassword(): ?string
+    public function getPassword(): string
     {
         return $this->password;
     }
@@ -180,68 +170,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $roles = $this->roles;
         $roles[] = 'ROLE_USER';
 
-        return array_unique($roles);
+        return array_values(array_unique($roles));
     }
 
-    /**
-     * @param list<string> $roles
-     */
-    public function setRoles(array $roles): static
+    public function addRole(string $role): void
     {
-        $this->roles = $roles;
-
-        return $this;
+        if (!in_array($role, $this->roles, true)) {
+            $this->roles[] = $role;
+        }
     }
 
     /**
      * @see UserInterface
      */
     public function eraseCredentials(): void {}
-
-    public function getBasket(): ?Basket
-    {
-        return $this->basket;
-    }
-
-    public function setBasket(Basket $basket): static
-    {
-        // set the owning side of the relation if necessary
-        if ($basket->getUserRelation() !== $this) {
-            $basket->setUserRelation($this);
-        }
-
-        $this->basket = $basket;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Order>
-     */
-    public function getOrders(): Collection
-    {
-        return $this->orders;
-    }
-
-    public function addOrder(Order $order): static
-    {
-        if (!$this->orders->contains($order)) {
-            $this->orders->add($order);
-            $order->setUserRelation($this);
-        }
-
-        return $this;
-    }
-
-    public function removeOrder(Order $order): static
-    {
-        if ($this->orders->removeElement($order)) {
-            // set the owning side to null (unless already changed)
-            if ($order->getUserRelation() === $this) {
-                $order->setUserRelation(null);
-            }
-        }
-
-        return $this;
-    }
 }

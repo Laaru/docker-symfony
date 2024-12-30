@@ -2,18 +2,16 @@
 
 namespace App\Tests\Controller\Api;
 
-use App\Repository\UserRepository;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\AbstractTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-class OrderReportControllerTest extends WebTestCase
+class OrderReportControllerTest extends AbstractTestCase
 {
     public function testInitOrderReport(): void
     {
         $client = self::createClient();
 
-        $userRepository = static::getContainer()->get(UserRepository::class);
-        $testUser = $userRepository->findOneByEmail('external-api');
+        $testUser = $this->getTestUserByEmail('external-api');
         $client->loginUser($testUser);
 
         $client->request(
@@ -26,7 +24,9 @@ class OrderReportControllerTest extends WebTestCase
         $this->assertInstanceOf(Response::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $responseData = json_decode($response->getContent(), true);
+        $responseData = $response->getContent()
+            ? json_decode($response->getContent(), true)
+            : [];
         $this->assertArrayHasKey('reportId', $responseData);
     }
 }

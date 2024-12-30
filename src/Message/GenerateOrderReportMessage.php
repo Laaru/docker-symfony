@@ -4,7 +4,7 @@ namespace App\Message;
 
 class GenerateOrderReportMessage
 {
-    private $reportId;
+    private string $reportId;
 
     public function __construct(string $reportId)
     {

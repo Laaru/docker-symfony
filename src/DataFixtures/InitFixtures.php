@@ -34,7 +34,7 @@ class InitFixtures extends Fixture
         $user->setFirstName('admin');
         $user->setEmail('admin');
         $user->setPhone('admin');
-        $user->setRoles(['ROLE_ADMIN']);
+        $user->addRole('ROLE_ADMIN');
         $user->setPassword($this->passwordHasher->hashPassword($user, 'password'));
         $manager->persist($user);
 
@@ -42,7 +42,7 @@ class InitFixtures extends Fixture
         $user->setFirstName('manager');
         $user->setEmail('manager');
         $user->setPhone('manager');
-        $user->setRoles(['ROLE_MANAGER']);
+        $user->addRole('ROLE_MANAGER');
         $user->setPassword($this->passwordHasher->hashPassword($user, 'password'));
         $manager->persist($user);
 
@@ -50,7 +50,6 @@ class InitFixtures extends Fixture
         $user->setFirstName('external-api');
         $user->setEmail('external-api');
         $user->setPhone('external-api');
-        $user->setRoles([]);
         $user->setPassword($this->passwordHasher->hashPassword($user, 'password'));
         $manager->persist($user);
 
@@ -61,7 +60,7 @@ class InitFixtures extends Fixture
             $user->setLastName($faker->lastName());
             $user->setEmail($faker->email());
             $user->setPhone($faker->phoneNumber());
-            $user->setRoles(['ROLE_USER']);
+            $user->addRole('ROLE_USER');
             $user->setPassword($this->passwordHasher->hashPassword($user, 'password'));
 
             $manager->persist($user);
@@ -100,7 +99,7 @@ class InitFixtures extends Fixture
             $name = $faker->sentence(mt_rand(1, 2));
             $externalId = $i;
             $product->setName($name);
-            $product->setSlug($slugify->slugify($name).'-'.$externalId);
+            $product->setSlug($slugify->slugify($name) . '-' . $externalId);
             $product->setBasePrice(mt_rand(100, 50000));
             $product->setSalePrice($faker->optional()->numberBetween(50, 9000));
             $product->setDescription($faker->paragraph());

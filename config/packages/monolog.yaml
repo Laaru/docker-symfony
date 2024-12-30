@@ -2,6 +2,7 @@ monolog:
     channels:
         - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
         - consumer:product
+        - producer:kafka
         - product:import
         - command:product_seeder
         - subscriber:console_command
@@ -14,6 +15,7 @@ monolog:
             id: App\Log\Monolog\DatabaseHandler
             channels: [
                 'consumer:product',
+                'producer:kafka',
                 'product:import',
                 'command:product_seeder',
                 'subscriber:console_command',

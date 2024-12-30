@@ -33,6 +33,10 @@ jobs:
         run: |
           make autotest-php-cs
 
+      - name: Run PHPStan using Makefile
+        run: |
+          make autotest-php-stan
+
       - name: Shutdown containers
         run: |
           docker-compose down

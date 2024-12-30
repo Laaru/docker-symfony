@@ -40,7 +40,7 @@ final readonly class UserRegisterDTO
         /** @var string */
         #[Assert\Type(type: Types::STRING)]
         #[Assert\NotBlank]
-        #[Assert\Length(min: 8)]
+        #[Assert\Length(min: 8, max: 255)]
         #[Assert\Regex(pattern: '/[A-Z]/', message: 'Password must contain at least one uppercase letter')]
         #[Assert\Regex(pattern: '/\d/', message: 'Password must contain at least one number')]
         #[Assert\Regex(pattern: '/[\W_]/', message: 'Password must contain at least one special character')]

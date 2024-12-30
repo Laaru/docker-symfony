@@ -2,20 +2,16 @@
 
 namespace App\Tests\Controller\Api;
 
-use App\Repository\BasketRepository;
-use App\Repository\ProductRepository;
-use App\Repository\UserRepository;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\AbstractTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-class BasketControllerTest extends WebTestCase
+class BasketControllerTest extends AbstractTestCase
 {
     public function testBasketView(): void
     {
         $client = self::createClient();
 
-        $userRepository = static::getContainer()->get(UserRepository::class);
-        $testUser = $userRepository->findOneByEmail('admin');
+        $testUser = $this->getTestUserByEmail('admin');
         $client->loginUser($testUser);
 
         $client->request(
@@ -27,7 +23,9 @@ class BasketControllerTest extends WebTestCase
         $this->assertInstanceOf(Response::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $responseData = json_decode($response->getContent(), true);
+        $responseData = $response->getContent()
+            ? json_decode($response->getContent(), true)
+            : [];
         $this->assertArrayHasKey('id', $responseData);
     }
 
@@ -35,28 +33,29 @@ class BasketControllerTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $userRepository = static::getContainer()->get(UserRepository::class);
-        $testUser = $userRepository->findOneByEmail('admin');
+        $testUser = $this->getTestUserByEmail('admin');
         $client->loginUser($testUser);
+        $this->prepareValidBasketForUser($testUser);
+        $productId = $this->getFirstBasketItemProductId($testUser);
 
-        $productRepository = static::getContainer()->get(ProductRepository::class);
-        $product = $productRepository->getRandomProduct();
-
+        $content = json_encode([
+            'productId' => $productId,
+            'quantity' => mt_rand(1, 5),
+        ]);
         $client->request(
             method: 'PUT',
             uri: '/api/basket/update',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode([
-                'productId' => $product->getId(),
-                'quantity' => mt_rand(1, 5),
-            ])
+            content: false === $content ? null : $content
         );
         $response = $client->getResponse();
 
         $this->assertInstanceOf(Response::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $responseData = json_decode($response->getContent(), true);
+        $responseData = $response->getContent()
+            ? json_decode($response->getContent(), true)
+            : [];
         $this->assertArrayHasKey('id', $responseData);
     }
 
@@ -64,28 +63,28 @@ class BasketControllerTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $userRepository = static::getContainer()->get(UserRepository::class);
-        $testUser = $userRepository->findOneByEmail('admin');
+        $testUser = $this->getTestUserByEmail('admin');
         $client->loginUser($testUser);
+        $product = $this->getRandomProduct();
 
-        $productRepository = static::getContainer()->get(ProductRepository::class);
-        $product = $productRepository->getRandomProduct();
-
+        $content = json_encode([
+            'productId' => $product->getId(),
+            'quantity' => mt_rand(1, 5),
+        ]);
         $client->request(
             method: 'POST',
             uri: '/api/basket/add',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode([
-                'productId' => $product->getId(),
-                'quantity' => mt_rand(1, 5),
-            ])
+            content: false === $content ? null : $content
         );
         $response = $client->getResponse();
 
         $this->assertInstanceOf(Response::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $responseData = json_decode($response->getContent(), true);
+        $responseData = $response->getContent()
+            ? json_decode($response->getContent(), true)
+            : [];
         $this->assertArrayHasKey('id', $responseData);
     }
 
@@ -93,30 +92,27 @@ class BasketControllerTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $userRepository = static::getContainer()->get(UserRepository::class);
-        $testUser = $userRepository->findOneByEmail('admin');
+        $testUser = $this->getTestUserByEmail('admin');
         $client->loginUser($testUser);
+        $productId = $this->getFirstBasketItemProductId($testUser);
 
-        $basketRepository = static::getContainer()->get(BasketRepository::class);
-        $basket = $basketRepository->findOneBy(['userRelation' => $testUser]);
-        $basketItems = $basket->getItems();
-        $firstBasketItem = $basketItems->current();
-        $productId = $firstBasketItem->getProduct()->getId();
-
+        $content = json_encode([
+            'productId' => $productId,
+        ]);
         $client->request(
             method: 'DELETE',
             uri: '/api/basket/remove',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode([
-                'productId' => $productId,
-            ])
+            content: false === $content ? null : $content
         );
         $response = $client->getResponse();
 
         $this->assertInstanceOf(Response::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $responseData = json_decode($response->getContent(), true);
+        $responseData = $response->getContent()
+            ? json_decode($response->getContent(), true)
+            : [];
         $this->assertArrayHasKey('id', $responseData);
 
         $foundItems = array_filter($responseData['items'], function ($item) use ($productId) {

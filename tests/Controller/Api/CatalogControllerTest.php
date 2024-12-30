@@ -2,30 +2,37 @@
 
 namespace App\Tests\Controller\Api;
 
-use App\Repository\UserRepository;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\AbstractTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-class CatalogControllerTest extends WebTestCase
+class CatalogControllerTest extends AbstractTestCase
 {
     public function testCatalogRead(): void
     {
         $client = self::createClient();
 
-        $userRepository = static::getContainer()->get(UserRepository::class);
-        $testUser = $userRepository->findOneByEmail('admin');
+        $testUser = $this->getTestUserByEmail('admin');
         $client->loginUser($testUser);
 
         $client->request(
             method: 'GET',
-            uri: '/api/catalog/'
+            uri: '/api/catalog/',
+            parameters: [
+                'page' => 1,
+                'order' => 'desc',
+                'sort' => 'updatedAt',
+            ]
         );
         $response = $client->getResponse();
 
         $this->assertInstanceOf(Response::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $responseData = json_decode($response->getContent(), true);
-        $this->assertArrayHasKey('data', $responseData);
+        $responseData = $response->getContent()
+            ? json_decode($response->getContent(), true)
+            : [];
+        $this->assertArrayHasKey('catalog', $responseData);
+        $this->assertArrayHasKey('filterOptions', $responseData);
+        $this->assertArrayHasKey('orderOptions', $responseData);
     }
 }

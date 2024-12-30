@@ -13,7 +13,7 @@ class GenerateOrderReportHandler
         private OrderReportService $orderReportService
     ) {}
 
-    public function __invoke(GenerateOrderReportMessage $message)
+    public function __invoke(GenerateOrderReportMessage $message): void
     {
         $reportId = $message->getReportId();
         $this->orderReportService->generateReport($reportId);
