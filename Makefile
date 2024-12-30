@@ -29,7 +29,7 @@ autotest-php-cs:
 
 autotest-php-stan:
 	@echo "Running PHPStan..."
-	docker-compose exec php php vendor/bin/phpstan analyse --memory-limit=512M
+	docker-compose exec -T php php vendor/bin/phpstan analyse --memory-limit=512M
 
 ## —— Php container ————————————————————————————————————————————————————————————————
 sh: ## Connect to the FrankenPHP container
