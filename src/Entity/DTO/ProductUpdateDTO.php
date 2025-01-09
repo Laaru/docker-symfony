@@ -87,12 +87,5 @@ final readonly class ProductUpdateDTO
         #[Assert\Choice(options: [0, 12, 20])]
         #[Property(example: 20)]
         public mixed $tax,
-
-        /** @var int */
-        #[Assert\Type(type: Types::INTEGER)]
-        #[Assert\NotBlank]
-        #[Assert\Positive]
-        #[Property(example: 2)]
-        public mixed $version
     ) {}
 }

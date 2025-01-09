@@ -36,7 +36,7 @@ class GenerateMockExchangeProductsCommand extends Command
         $output->writeln([$message]);
 
         $products = [];
-        for ($i = 1; $i <= mt_rand(5, 20); ++$i) {
+        for ($i = 0; $i <= mt_rand(5, 20); ++$i) {
             $products[] = [
                 'id' => mt_rand(1, 999999),
                 'name' => $this->faker->sentence(mt_rand(1, 2)),
@@ -49,7 +49,6 @@ class GenerateMockExchangeProductsCommand extends Command
                 'description' => $this->faker->paragraph(),
                 'cost' => mt_rand(100, 50000),
                 'tax' => $this->faker->randomElement([0, 12, 20]),
-                'version' => mt_rand(1, 5),
                 'color' => mt_rand(1, 10),
                 'stores' => $this->faker->randomElements(range(1, 20), mt_rand(1, 5)),
             ];

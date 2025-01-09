@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20241230100543 extends AbstractMigration
+final class Version20250109094738 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -46,7 +46,7 @@ final class Version20241230100543 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_B88F75C9989D9B62 ON order_status (slug)');
         $this->addSql('COMMENT ON COLUMN order_status.created_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('COMMENT ON COLUMN order_status.updated_at IS \'(DC2Type:datetime_immutable)\'');
-        $this->addSql('CREATE TABLE product (id SERIAL NOT NULL, color_id INT DEFAULT NULL, external_id INT NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, name VARCHAR(255) NOT NULL, slug VARCHAR(255) NOT NULL, base_price INT NOT NULL, sale_price INT DEFAULT NULL, description TEXT DEFAULT NULL, weight INT NOT NULL, height INT NOT NULL, width INT NOT NULL, length INT NOT NULL, tax INT NOT NULL, version INT NOT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE TABLE product (id SERIAL NOT NULL, color_id INT DEFAULT NULL, external_id INT NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, name VARCHAR(255) NOT NULL, slug VARCHAR(255) NOT NULL, base_price INT NOT NULL, sale_price INT DEFAULT NULL, description TEXT DEFAULT NULL, weight INT NOT NULL, height INT NOT NULL, width INT NOT NULL, length INT NOT NULL, tax INT NOT NULL, version INT DEFAULT 1 NOT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_D34A04AD9F75D7B0 ON product (external_id)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_D34A04AD989D9B62 ON product (slug)');
         $this->addSql('CREATE INDEX IDX_D34A04AD7ADA1FB5 ON product (color_id)');

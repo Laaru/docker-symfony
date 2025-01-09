@@ -48,12 +48,17 @@ class ExceptionListener
             ];
         }
 
-        $responseCode = match (true) {
-            $isValidationException => Response::HTTP_UNPROCESSABLE_ENTITY,
-            method_exists($throwable, 'getStatusCode') && $throwable->getStatusCode() > 0 => $throwable->getStatusCode(),
-            $throwable->getCode() > 0 => $throwable->getCode(),
-            default => Response::HTTP_INTERNAL_SERVER_ERROR,
-        };
+        if ($isValidationException) {
+            $responseCode = Response::HTTP_UNPROCESSABLE_ENTITY;
+        } elseif (
+            method_exists($throwable, 'getStatusCode')
+            && $throwable->getStatusCode() >= 100
+            && $throwable->getStatusCode() <= 599
+        ) {
+            $responseCode = $throwable->getStatusCode();
+        } else {
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        }
 
         $event->setResponse(new JsonResponse(
             data: ['errors' => $errors],

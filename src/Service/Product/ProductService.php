@@ -44,7 +44,7 @@ readonly class ProductService
             throw new NotFoundHttpException("No product found for id $id");
         }
 
-        return $this->productImportService->importOneProduct($productUpdateDTO);
+        return $this->productImportService->importOneProduct($productUpdateDTO, $id);
     }
 
     public function deleteProduct(int $id): void
