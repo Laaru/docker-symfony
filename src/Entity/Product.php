@@ -82,7 +82,8 @@ class Product
     private int $tax;
 
     #[Groups(['detail'])]
-    #[ORM\Column(type: Types::INTEGER, nullable: false)]
+    #[ORM\Version]
+    #[ORM\Column(type: Types::INTEGER)]
     private int $version;
 
     public function __construct()
@@ -278,13 +279,6 @@ class Product
     public function getVersion(): ?int
     {
         return $this->version;
-    }
-
-    public function setVersion(int $version): static
-    {
-        $this->version = $version;
-
-        return $this;
     }
 
     public function getExternalId(): ?int

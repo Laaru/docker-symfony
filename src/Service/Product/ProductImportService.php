@@ -42,7 +42,7 @@ class ProductImportService
                 $this->importOneProduct($productUpdateDTO);
 
                 ++$importedProducts;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $this->logger->warning('Failed to import product', [
                     'error' => $e->getMessage(),
                     'data' => $productUpdateDTO,
@@ -50,16 +50,17 @@ class ProductImportService
             }
         }
 
+        $this->entityManager->clear();
+
         $this->logger->info('Import finished. Imported products: ' . $importedProducts);
     }
 
     /**
      * @throws \Exception
      */
-    public function importOneProduct(ProductUpdateDTO $productDTO): Product
+    public function importOneProduct(ProductUpdateDTO $productDTO, ?int $productId = null): Product
     {
-        $product = $this->prepareProductEntity($productDTO);
-
+        $product = $this->prepareProductEntity($productDTO, $productId);
         $this->entityManager->persist($product);
         $this->entityManager->flush();
 
@@ -77,10 +78,15 @@ class ProductImportService
         }
     }
 
-    private function prepareProductEntity(ProductUpdateDTO $productDTO): Product
+    private function prepareProductEntity(ProductUpdateDTO $productDTO, ?int $productId = null): Product
     {
-        /** @var Product $product */
-        $product = $this->productRepository->findOneByExternalId($productDTO->externalId);
+        if ($productId) {
+            /** @var Product $product */
+            $product = $this->productRepository->find($productId);
+        } else {
+            /** @var Product $product */
+            $product = $this->productRepository->findOneByExternalId($productDTO->externalId);
+        }
 
         if (!$product) {
             $product = new Product();
@@ -97,7 +103,6 @@ class ProductImportService
         $product->setBasePrice($productDTO->basePrice);
         $product->setSalePrice($productDTO->salePrice);
         $product->setTax($productDTO->tax);
-        $product->setVersion($productDTO->version);
 
         if (!empty($productDTO->colorExternalId)) {
             /** @var Color $color */

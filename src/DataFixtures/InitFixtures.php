@@ -105,7 +105,6 @@ class InitFixtures extends Fixture
             $product->setDescription($faker->paragraph());
             $product->setColor($faker->randomElement($colors));
             $product->setExternalId($externalId);
-            $product->setVersion(mt_rand(1, 5));
             $product->setHeight(mt_rand(10, 1000));
             $product->setLength(mt_rand(10, 1000));
             $product->setWidth(mt_rand(10, 1000));

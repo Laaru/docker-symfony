@@ -23,8 +23,7 @@ class ProductUpdateDTOFactory
             height: $productData['measurements']['height'] ?? $productData['height'] ?? null,
             width: $productData['measurements']['width'] ?? $productData['width'] ?? null,
             length: $productData['measurements']['length'] ?? $productData['length'] ?? null,
-            tax: $productData['tax'] ?? null,
-            version: $productData['version'] ?? null
+            tax: $productData['tax'] ?? null
         );
     }
 }
