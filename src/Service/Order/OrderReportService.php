@@ -2,7 +2,6 @@
 
 namespace App\Service\Order;
 
-use App\Entity\Order;
 use App\Entity\OrderItem;
 use App\Message\GenerateOrderReportMessage;
 use App\Producer\KafkaProducerService;
@@ -15,6 +14,8 @@ use Symfony\Component\Uid\Uuid;
 
 class OrderReportService
 {
+    private const int CHUNK_SIZE = 10;
+
     public function __construct(
         private readonly MessageBusInterface $bus,
         private readonly KafkaProducerService $kafkaProducerService,
@@ -50,30 +51,47 @@ class OrderReportService
                 }
             }
 
-            $reportData = [];
-            /** @var Order[] $orders */
-            $orders = $this->orderRepository->findAll();
-            foreach ($orders as $order) {
-                /* @var $orderItem OrderItem */
-                foreach ($order->getItems() as $orderItem) {
-                    $product = $orderItem->getProduct();
-                    if (!$product) {
-                        continue;
+            $fileHandle = fopen($reportFilePath, 'w');
+            if (!$fileHandle) {
+                throw new \RuntimeException('Unable to open file for writing: ' . $reportFilePath);
+            }
+
+            fwrite($fileHandle, '[');
+            $isFirstItem = true;
+
+            $ordersChunk = $this->orderRepository->getAllOrdersViaGenerator($this::CHUNK_SIZE);
+            foreach ($ordersChunk as $orders) {
+                foreach ($orders as $order) {
+                    /* @var $orderItem OrderItem */
+                    foreach ($order->getItems() as $orderItem) {
+                        $product = $orderItem->getProduct();
+                        if (!$product) {
+                            continue;
+                        }
+                        $user = $order->getUserRelation();
+                        if (!$user) {
+                            continue;
+                        }
+
+                        if (!$isFirstItem) {
+                            fwrite($fileHandle, ',');
+                        }
+
+                        $reportData = [
+                            'product_name' => $product->getName(),
+                            'price' => $orderItem->getPrice(),
+                            'amount' => $orderItem->getQuantity(),
+                            'user' => ['id' => $user->getId()],
+                        ];
+
+                        fwrite($fileHandle, json_encode($reportData, JSON_THROW_ON_ERROR));
+                        $isFirstItem = false;
                     }
-                    $user = $order->getUserRelation();
-                    if (!$user) {
-                        continue;
-                    }
-                    $reportData[] = [
-                        'product_name' => $product->getName(),
-                        'price' => $orderItem->getPrice(),
-                        'amount' => $orderItem->getQuantity(),
-                        'user' => ['id' => $user->getId()],
-                    ];
                 }
             }
 
-            file_put_contents($reportFilePath, json_encode($reportData));
+            fwrite($fileHandle, ']');
+            fclose($fileHandle);
 
             $dispatchMessage = [
                 'reportId' => $reportId,

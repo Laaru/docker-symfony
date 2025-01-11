@@ -30,4 +30,26 @@ class OrderRepository extends AbstractRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function getAllOrdersViaGenerator(int $chunkSize): \Generator
+    {
+        $lastId = 0;
+        while (true) {
+            $orders = $this->createQueryBuilder('o')
+                ->where('o.id > :lastId')
+                ->setParameter('lastId', $lastId)
+                ->orderBy('o.id', 'ASC')
+                ->setMaxResults($chunkSize)
+                ->getQuery()
+                ->getResult();
+
+            if (empty($orders)) {
+                break;
+            }
+
+            $lastId = end($orders)->getId();
+
+            yield $orders;
+        }
+    }
 }
