@@ -25,6 +25,14 @@ jobs:
         run: |
           make autotest-init
 
+  lint:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Run PHP Unit tests using Makefile
         run: |
           make autotest-php-unit
@@ -37,6 +45,11 @@ jobs:
         run: |
           make autotest-php-stan
 
+  end:
+    needs: [build, lint]
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Shutdown containers
         run: |
           docker-compose down
